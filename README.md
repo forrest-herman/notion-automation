@@ -9,6 +9,11 @@
   - ensures the correct template is used
   - only 1 page is created per day
 
+
+### Requirements
+- This code requires a config.py file containing a Notion Integration `secret_key` in the form:
+  - `token = 'secret_key'`
+
 ### Work in Progress
 - [ ] Add calendar integration for events
 - [ ] Add proper tags based on template
