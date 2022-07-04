@@ -2,3 +2,4 @@ __pycache__/
 config.py
 db.json
 json/
+.flake8

@@ -1,15 +1,15 @@
 import requests
-import json
 from datetime import datetime
 
 import config
+from utils import save_json_to_file
 
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database
 
 token = config.token
 
-database_id = '3f6b1a7d1198421f83365c74cdb7f23f'  # Journal
+database_id_journal = '3f6b1a7d1198421f83365c74cdb7f23f'  # Journal
 
 headers = {
     "Accept": "application/json",
@@ -19,19 +19,18 @@ headers = {
 }
 
 
-def readDatabase(database_id, headers):
-    url = f'https://api.notion.com/v1/databases/{database_id}'
+def readDatabase(database_id_journal, headers):
+    url = f'https://api.notion.com/v1/databases/{database_id_journal}'
     result = requests.get(url, headers=headers)
     print(result.status_code)
 
     data = result.json()
 
-    with open('./json/db.json', 'w', encoding='utf8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    # save_json_to_file(data, './json/db_data.json')
 
 
-def read_database_pages(database_id, headers):
-    url = f'https://api.notion.com/v1/databases/{database_id}/query'
+def read_database_pages(database_id_journal, headers):
+    url = f'https://api.notion.com/v1/databases/{database_id_journal}/query'
 
     # get the correct template based on weekday or weekend
     if datetime.now().weekday() < 5:
@@ -54,10 +53,7 @@ def read_database_pages(database_id, headers):
 
     data = result.json()
 
-    # read_block_children(data['results'][0]['id'], headers)
-
-    with open('./json/db_query.json', 'w', encoding='utf8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    # save_json_to_file(data, './json/db_query.json')
 
     return data['results'][0]['id']
 
@@ -69,17 +65,35 @@ def read_block_children(block_id, headers):
 
     data = res.json()
 
-    with open('./json/page_data.json', 'w', encoding='utf8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    # save_json_to_file(data["results"], './json/page_data.json')
 
     return data["results"]
 
 
-def create_page(database_id, headers, blocks_data):
+def append_block_children(block_id, headers, blocks_data):
+    url = f'https://api.notion.com/v1/blocks/{block_id}/children'
+
+    print(blocks_data)
+    payload = {
+        "children": blocks_data
+    }
+
+    res = requests.patch(url, headers=headers, json=payload)
+    print(res.status_code)
+
+    # data = res.json()
+    # print(data)
+
+    # save_json_to_file(data, './json/page_data.json')
+
+    # return data["results"]
+
+
+def create_page(database_id_journal, headers, blocks_data):
     url = 'https://api.notion.com/v1/pages'
 
     newPageData = {
-        "parent": {"database_id": database_id},
+        "parent": {"database_id_journal": database_id_journal},
         "properties": {
             "Name": {
                 "title": [
@@ -106,9 +120,25 @@ def create_page(database_id, headers, blocks_data):
     res = requests.post(url, headers=headers, json=newPageData)
     print(res.status_code)
 
+    return res.json()
+
 
 # print(datetime.now().isoformat())
 
-databasePage_id = read_database_pages(database_id, headers)
-templateBlocks = read_block_children(databasePage_id, headers)
-create_page(database_id, headers, templateBlocks)
+templatePage_id = read_database_pages(database_id_journal, headers)
+templateBlocks = read_block_children(templatePage_id, headers)
+newPage_id = create_page(database_id_journal, headers, templateBlocks)["id"]
+
+
+i = 0
+newBlocks = read_block_children(newPage_id, headers)
+
+# check for children and append those!
+for block in templateBlocks:
+    if block["has_children"]:
+        append_block_children(
+            newBlocks[i]["id"],
+            headers,
+            read_block_children(block["id"], headers)
+        )
+    i += 1
