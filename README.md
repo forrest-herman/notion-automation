@@ -10,5 +10,5 @@
   - only 1 page is created per day
 
 ### Work in Progress
-- [] Add calendar integration for events
-- [] Add proper tags based on template
+- [ ] Add calendar integration for events
+- [ ] Add proper tags based on template
