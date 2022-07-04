@@ -20,10 +20,44 @@ headers = {
     "Authorization": "Bearer " + token
 }
 
-
 # print(datetime.now().isoformat())
+today = datetime.now().date().isoformat()
 
-templatePage_id = read_database_pages(database_id_journal, headers)
+# get the correct template based on weekday or weekend
+if datetime.now().weekday() < 5:
+    pageName = "Daily Summary Preteckt Template"
+else:
+    pageName = "Daily Summary Template"
+
+template_query_payload = {
+    "page_size": 10,
+    "filter": {
+        "property": "Name",
+        "rich_text": {
+            "equals": pageName
+        }
+    }
+}
+
+today_query_payload = {
+    "page_size": 10,
+    "filter": {
+        "property": "Date",
+        "date": {
+            "equals": today
+        }
+    }
+}
+
+# check if page already exists
+exists = query_database_pages(database_id_journal, headers, today_query_payload)
+
+if exists:
+    print("Page already exists")
+    exit()
+
+templatePage_id = query_database_pages(
+    database_id_journal, headers, template_query_payload)[0]['id']
 templateBlocks = read_block_children(templatePage_id, headers)
 
 newPageData_journal = {
@@ -36,7 +70,7 @@ newPageData_journal = {
                     "mention": {
                         "type": "date",
                         "date": {
-                            "start": datetime.now().date().isoformat(),
+                            "start": today,
                         }
                     }
                 }
@@ -44,20 +78,21 @@ newPageData_journal = {
         },
         "Date": {
             "date": {
-                "start": datetime.now().date().isoformat(),
+                "start": today,
             }
         },
     },
     "children": templateBlocks
 }
 
+# create the new page
 newPage_id = create_page(headers, newPageData_journal)["id"]
 
-
-i = 0
+# read the new pages blocks (so we can append their children)
 newBlocks = read_block_children(newPage_id, headers)
 
 # check for children and append those!
+i = 0
 for block in templateBlocks:
     if block["has_children"]:
         append_block_children(

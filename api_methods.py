@@ -6,8 +6,8 @@ from datetime import datetime
 from utils import save_json_to_file
 
 
-def readDatabase(database_id_journal, headers):
-    url = f'https://api.notion.com/v1/databases/{database_id_journal}'
+def readDatabase(database_id, headers):
+    url = f'https://api.notion.com/v1/databases/{database_id}'
     result = requests.get(url, headers=headers)
     print(result.status_code)
 
@@ -18,24 +18,8 @@ def readDatabase(database_id_journal, headers):
     return data
 
 
-def read_database_pages(database_id_journal, headers):
-    url = f'https://api.notion.com/v1/databases/{database_id_journal}/query'
-
-    # get the correct template based on weekday or weekend
-    if datetime.now().weekday() < 5:
-        pageName = "Daily Summary Preteckt Template"
-    else:
-        pageName = "Daily Summary Template"
-
-    payload = {
-        "page_size": 10,
-        "filter": {
-            "property": "Name",
-            "rich_text": {
-                "equals": pageName
-            }
-        }
-    }
+def query_database_pages(database_id, headers, payload):
+    url = f'https://api.notion.com/v1/databases/{database_id}/query'
 
     result = requests.post(url, headers=headers, json=payload)
     print(result.status_code)
@@ -44,7 +28,7 @@ def read_database_pages(database_id_journal, headers):
 
     # save_json_to_file(data, './json/db_query.json')
 
-    return data['results'][0]['id']
+    return data['results']
 
 
 def read_block_children(block_id, headers):
@@ -63,7 +47,6 @@ def append_block_children(block_id, headers, blocks_data):
     """ Append child blocks to a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
 
-    print(blocks_data)
     payload = {
         "children": blocks_data
     }
@@ -85,6 +68,6 @@ def create_page(headers, newPageData):
 
     res = requests.post(url, headers=headers, json=newPageData)
     print(res.status_code)
-    save_json_to_file(res.json(), './json/new_page_data.json')
+    # save_json_to_file(res.json(), './json/new_page_data.json')
 
     return res.json()
