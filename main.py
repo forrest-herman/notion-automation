@@ -4,7 +4,8 @@ from datetime import datetime
 
 import config
 
-# see instructions here https://developers.notion.com/reference/retrieve-a-database
+# see instructions here
+# https://developers.notion.com/reference/retrieve-a-database
 
 token = config.token
 
