@@ -4,7 +4,7 @@ from datetime import datetime
 import config
 from api_methods import *
 
-from utils import save_json_to_file
+# from utils import save_json_to_file
 
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database

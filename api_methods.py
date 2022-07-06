@@ -1,7 +1,6 @@
 # api_methods.py
 
 import requests
-from datetime import datetime
 
 from utils import save_json_to_file
 
@@ -45,7 +44,7 @@ def read_block_children(block_id, headers):
 
 
 def read_page_properties(page_id, property_id, headers):
-    """ 
+    """
     Read page properties.
     To obtain property_id's, use the read_database endpoint.
     """
@@ -92,11 +91,11 @@ def create_page(headers, newPageData):
 
 
 def update_page(page_id, headers, payload):
-    """ 
-    This endpoint is for updating page properties, not page content. 
-    To fetch page content, use the retrieve block children endpoint. 
-    To append page content, use the append block children endpoint. 
-    
+    """
+    This endpoint is for updating page properties, not page content.
+    To fetch page content, use the retrieve block children endpoint.
+    To append page content, use the append block children endpoint.
+
     payload = {
         "properties": "gfdg",
         "archived": False,
