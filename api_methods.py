@@ -1,4 +1,3 @@
-# api_methods.py
 import requests
 
 from utils import save_json_to_file
@@ -45,6 +44,7 @@ def read_page_properties(page_id, property_id, headers):
     return data
 
 
+# DELETE THIS?
 def read_block_children(block_id, headers):
     """ Read child blocks of a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
@@ -70,14 +70,7 @@ def read_block_children_recursive(block_id, headers):
 
     for block in data["results"]:
         if (block["has_children"]):
-            if (block["type"] == "column_list"):
-                block['column_list'] = {
-                    "children": read_block_children_recursive(block["id"], headers)
-                }
-            elif (block["type"] == "column"):
-                block['column'] = {
-                    "children": read_block_children_recursive(block["id"], headers)
-                }
+            block[block["type"]]["children"] = read_block_children_recursive(block["id"], headers)
 
     # save_json_to_file(data["results"], './json/block_children.json')
 
@@ -95,11 +88,11 @@ def append_block_children(block_id, headers, blocks_data):
     res = requests.patch(url, headers=headers, json=payload)
     print(res.status_code)
     if (res.status_code != 200):
-        print(res.text)
+        print("append", res.text)
 
     data = res.json()
 
-    # save_json_to_file(data, './json/new_page_children_data.json')
+    # save_json_to_file(payload, './json/new_page_children_data.json')
 
     return data
 
@@ -111,7 +104,7 @@ def create_page(headers, newPageData):
     res = requests.post(url, headers=headers, json=newPageData)
     print(res.status_code)
     if (res.status_code != 200):
-        print(res.text)
+        print("create", res.text)
         exit()
 
     # save_json_to_file(res.json(), './json/new_page_data.json')

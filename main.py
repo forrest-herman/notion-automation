@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 # import json
 
 import config
@@ -20,11 +20,12 @@ headers = {
     "Authorization": "Bearer " + token
 }
 
-# print(datetime.now().isoformat())
-today = datetime.now().date().isoformat()
+# print(datetime.datetime.now().isoformat())
+# today = datetime.datetime.now().date().isoformat()
+today = datetime.date.today().isoformat()
 
 # get the correct template based on weekday or weekend
-if datetime.now().weekday() < 5:
+if datetime.datetime.now().weekday() < 5:
     pageName = "Daily Summary Preteckt Template"
 else:
     pageName = "Daily Summary Template"
@@ -54,12 +55,13 @@ exists = query_database_pages(database_id_journal, headers, today_query_payload)
 
 if exists:
     print("Page already exists")
+    # today = datetime.date.today() + datetime.timedelta(days=1)
+    # today = today.isoformat()
     exit()
 
 templatePage_id = query_database_pages(
     database_id_journal, headers, template_query_payload)[0]['id']
 templateBlocks = read_block_children_recursive(templatePage_id, headers)
-# save_json_to_file(templateBlocks, './json/template_blocks.json')
 
 # get the property id of the jounral page template
 properties_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
@@ -103,44 +105,15 @@ newPageData_journal = {
 # create the new page
 newPage_id = create_page(headers, newPageData_journal)["id"]
 
-# add the template blocks to the new page
+# add the template blocks to the new page (including sub_children)
 append_block_children(newPage_id, headers, templateBlocks)
 
-# read and store the new pages blocks (so we can append their children)
-newBlocks = read_block_children(newPage_id, headers)
 
-# recursive function -- WIP
-# def append_block_children_where_applicable(block):
-#     if block["has_children"] or block['children']:
-#         children = read_block_children(block["id"], headers)
-#         child = children['type']
-
-#         append_block_children_where_applicable(children['type'])
-
-#         append_block_children(
-#             newBlock_location,
-#             headers,
-#             children
-#         )
-#     else:
-#         return
-
-
-# check for children and append those!
-i = 0
-for block in templateBlocks:
-    if (block["has_children"] and block['type'] != 'column_list'):
-        append_block_children(
-            newBlocks[i]["id"],
-            headers,
-            read_block_children(block["id"], headers)
-        )
-    i += 1
-
-
-# further implementations
+# ------- further implementations -------
 
 # append the tags to the new page ???? no need
 # update_page()  # ----------------------------------------------- WIP
 # add tag depending on day of week etc.
 # add calendar events
+
+# if tuesday add Grocery Tag
