@@ -1,5 +1,5 @@
 from datetime import datetime
-# import requests
+# import json
 
 import config
 from api_methods import *
@@ -58,7 +58,8 @@ if exists:
 
 templatePage_id = query_database_pages(
     database_id_journal, headers, template_query_payload)[0]['id']
-templateBlocks = read_block_children(templatePage_id, headers)
+templateBlocks = read_block_children_recursive(templatePage_id, headers)
+# save_json_to_file(templateBlocks, './json/template_blocks.json')
 
 # get the property id of the jounral page template
 properties_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
@@ -96,19 +97,39 @@ newPageData_journal = {
         },
         "Tags": newPage_tags,
     },
-    "children": templateBlocks
+    # "children": templateBlocks
 }
 
 # create the new page
 newPage_id = create_page(headers, newPageData_journal)["id"]
 
-# read the new pages blocks (so we can append their children)
+# add the template blocks to the new page
+append_block_children(newPage_id, headers, templateBlocks)
+
+# read and store the new pages blocks (so we can append their children)
 newBlocks = read_block_children(newPage_id, headers)
+
+# recursive function -- WIP
+# def append_block_children_where_applicable(block):
+#     if block["has_children"] or block['children']:
+#         children = read_block_children(block["id"], headers)
+#         child = children['type']
+
+#         append_block_children_where_applicable(children['type'])
+
+#         append_block_children(
+#             newBlock_location,
+#             headers,
+#             children
+#         )
+#     else:
+#         return
+
 
 # check for children and append those!
 i = 0
 for block in templateBlocks:
-    if block["has_children"]:
+    if (block["has_children"] and block['type'] != 'column_list'):
         append_block_children(
             newBlocks[i]["id"],
             headers,
