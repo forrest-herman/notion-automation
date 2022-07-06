@@ -60,6 +60,19 @@ templatePage_id = query_database_pages(
     database_id_journal, headers, template_query_payload)[0]['id']
 templateBlocks = read_block_children(templatePage_id, headers)
 
+# get the property id of the jounral page template
+properties_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
+
+# get the tags from the template
+properties = read_page_properties(templatePage_id, properties_id, headers)
+
+# properties payload for the new page
+newPage_tags = {
+    properties['type']: [{'name': multi_select['name']}
+                         for multi_select in properties[properties['type']]]
+}
+
+# payload for new journal page based on template, current date and tags
 newPageData_journal = {
     "parent": {"database_id": database_id_journal},
     "properties": {
@@ -81,6 +94,7 @@ newPageData_journal = {
                 "start": today,
             }
         },
+        "Tags": newPage_tags,
     },
     "children": templateBlocks
 }
@@ -101,3 +115,11 @@ for block in templateBlocks:
             read_block_children(block["id"], headers)
         )
     i += 1
+
+
+# further implementations
+
+# append the tags to the new page ???? no need
+# update_page()  # ----------------------------------------------- WIP
+# add tag depending on day of week etc.
+# add calendar events

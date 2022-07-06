@@ -6,7 +6,7 @@ from datetime import datetime
 from utils import save_json_to_file
 
 
-def readDatabase(database_id, headers):
+def read_database(database_id, headers):
     url = f'https://api.notion.com/v1/databases/{database_id}'
     result = requests.get(url, headers=headers)
     print(result.status_code)
@@ -18,10 +18,10 @@ def readDatabase(database_id, headers):
     return data
 
 
-def query_database_pages(database_id, headers, payload):
+def query_database_pages(database_id, headers, query_payload):
     url = f'https://api.notion.com/v1/databases/{database_id}/query'
 
-    result = requests.post(url, headers=headers, json=payload)
+    result = requests.post(url, headers=headers, json=query_payload)
     print(result.status_code)
 
     data = result.json()
@@ -32,6 +32,7 @@ def query_database_pages(database_id, headers, payload):
 
 
 def read_block_children(block_id, headers):
+    """ Read child blocks of a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
     res = requests.get(url, headers=headers)
     print(res.status_code)
@@ -41,6 +42,22 @@ def read_block_children(block_id, headers):
     # save_json_to_file(data["results"], './json/page_data.json')
 
     return data["results"]
+
+
+def read_page_properties(page_id, property_id, headers):
+    """ 
+    Read page properties.
+    To obtain property_id's, use the read_database endpoint.
+    """
+    url = f'https://api.notion.com/v1/pages/{page_id}/properties/{property_id}'
+    res = requests.get(url, headers=headers)
+    print(res.status_code)
+
+    data = res.json()
+
+    # save_json_to_file(data, './json/page_properties.json')
+
+    return data
 
 
 def append_block_children(block_id, headers, blocks_data):
@@ -67,6 +84,29 @@ def create_page(headers, newPageData):
     url = 'https://api.notion.com/v1/pages'
 
     res = requests.post(url, headers=headers, json=newPageData)
+    print(res.status_code)
+
+    # save_json_to_file(res.json(), './json/new_page_data.json')
+
+    return res.json()
+
+
+def update_page(page_id, headers, payload):
+    """ 
+    This endpoint is for updating page properties, not page content. 
+    To fetch page content, use the retrieve block children endpoint. 
+    To append page content, use the append block children endpoint. 
+    
+    payload = {
+        "properties": "gfdg",
+        "archived": False,
+        "icon": "gdsfg",
+        "cover": "dsgdg"
+    }
+    """
+    url = f'https://api.notion.com/v1/pages/{page_id}'
+
+    res = requests.patch(url, headers=headers, json=payload)
     print(res.status_code)
     # save_json_to_file(res.json(), './json/new_page_data.json')
 
