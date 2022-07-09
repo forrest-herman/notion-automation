@@ -23,9 +23,10 @@ headers = {
 # print(datetime.datetime.now().isoformat())
 # today = datetime.datetime.now().date().isoformat()
 today = datetime.date.today().isoformat()
+weekday = datetime.date.today().weekday()
 
 # get the correct template based on weekday or weekend
-if datetime.datetime.now().weekday() < 5:
+if weekday < 5:  # monday - friday
     pageName = "Daily Summary Preteckt Template"
 else:
     pageName = "Daily Summary Template"
@@ -74,6 +75,10 @@ newPage_tags = {
     properties['type']: [{'name': multi_select['name']}
                          for multi_select in properties[properties['type']]]
 }
+
+# add more tags
+if weekday == 1:  # tuesday
+    newPage_tags[properties['type']].append({'name': 'Groceries 🛒'})
 
 # payload for new journal page based on template, current date and tags
 newPageData_journal = {
