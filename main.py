@@ -125,53 +125,90 @@ today_end = today_start + datetime.timedelta(days=1)
 today_start = today_start.isoformat()
 today_end = today_end.isoformat()
 
-events_from_all_calendars = gcal_methods.get_all_events(maxResults=10,
-                                          timeMin=today_start, timeMax=today_end, singleEvents=True, orderBy='startTime')
+try:
+    events_from_all_calendars = gcal_methods.get_all_events(
+        maxResults=10,
+        timeMin=today_start,
+        timeMax=today_end,
+        singleEvents=True,
+        orderBy='startTime'
+    )
 
-# result = gcal_methods.get_calendar_events(calendarId='primary', maxResults=10,
-#                                           timeMin=today_start, timeMax=today_end, singleEvents=True, orderBy='startTime')
+    """ Example:
+    result = gcal_methods.get_calendar_events(
+        calendarId='primary',
+        maxResults=10,
+        timeMin=today_start,
+        timeMax=today_end,
+        singleEvents=True,
+        orderBy='startTime'
+    )
+    """
 
-events_today_info = [
-    {
-        'summary': event['summary'],
-        'htmlLink': event['htmlLink'],
-        'start': datetime.datetime.fromisoformat(event['start']['dateTime']),
-        'end': datetime.datetime.fromisoformat(event['end']['dateTime'])
-    } for event in events_from_all_calendars]
+    events_today_info = [
+        {
+            'summary': event['summary'],
+            'htmlLink': event['htmlLink'],
+            'start': datetime.datetime.fromisoformat(event['start']['dateTime']),
+            'end': datetime.datetime.fromisoformat(event['end']['dateTime'])
+        } for event in events_from_all_calendars]
 
-# events_today = set(events_today)  # remove duplicates
+    # events_today = set(events_today)  # remove duplicates
 
-# print(json.dumps(events_today_info, indent=4))
+    # print(json.dumps(events_today_info, indent=4))
 
-newBlocks = [
-    {
-        "object": "block",
-        "has_children": False,
-        "archived": False,
-        "type": "bulleted_list_item",
-        "bulleted_list_item": {
-            "rich_text": [
-                {
-                    "type": "text",
-                    "text": {
-                        "content": "{}: {} - {}".format(event['summary'], event['start'].strftime("%#I:%M %p"), event['end'].strftime("%#I:%M %p")),
-                        "link": {'type': 'url', 'url': event['htmlLink']
-                                 } if event['htmlLink'] else None,
+    newBlocks = [
+        {
+            "object": "block",
+            "has_children": False,
+            "archived": False,
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": f"{event['summary']} ",
+                            "link": None,
+                        },
+                        "annotations": {
+                            "bold": False,
+                            "italic": False,
+                            "strikethrough": False,
+                            "underline": False,
+                            "code": False,
+                            "color": "gray"
+                        },
                     },
-                    "annotations": {
-                        "bold": False,
-                        "italic": False,
-                        "strikethrough": False,
-                        "underline": False,
-                        "code": False,
-                        "color": "gray"
-                    },
-                }
-            ],
-            "color": "default"
-        }
-    } for event in sorted(events_today_info, key=lambda x: x['start'])
-]
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": "({} - {})".format(
+                                event['start'].strftime("%#I:%M %p"),
+                                event['end'].strftime("%#I:%M %p")
+                            ),
+                            "link": {
+                                'type': 'url',
+                                'url': event['htmlLink']
+                            } if event['htmlLink'] else None,
+                        },
+                        "annotations": {
+                            "bold": False,
+                            "italic": False,
+                            "strikethrough": False,
+                            "underline": False,
+                            "code": False,
+                            "color": "gray"
+                        },
+                    }
+                ],
+                "color": "default"
+            }
+        } for event in sorted(events_today_info, key=lambda x: x['start'])
+    ]
+
+except Exception as e:
+    print("Error with GCal API", e)
 
 # add all the new blocks to the template
 for count, block in enumerate(newBlocks):
