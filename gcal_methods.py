@@ -52,12 +52,11 @@ def get_calendar_list():
     page_token = None
     while True:
         calendar_list = service.calendarList().list(pageToken=page_token).execute()
-        for calendar_list_entry in calendar_list['items']:
-            print(calendar_list_entry['summary'])
+        # for calendar_list_entry in calendar_list['items']:
+        #     print(calendar_list_entry['summary'])
         page_token = calendar_list.get('nextPageToken')
         if not page_token:
             break
-
     return calendar_list
 
 
@@ -67,14 +66,14 @@ def get_calendar_events(calendarId='primary', **kwargs):
     events = service.events().list(calendarId=calendarId, **kwargs).execute()
     return events
 
-    # page_token = None
-    # while True:
-    #     events = service.events().list(calendarId='primary', pageToken=page_token).execute()
-    #     for event in events['items']:
-    #         print(event['summary'])
-    #     page_token = events.get('nextPageToken')
-    #     if not page_token:
-    #         break
+
+# get events from all calendars
+def get_all_events(**kwargs):
+    calendar_list = get_calendar_list()
+    events = []
+    for calendar_list_entry in calendar_list['items']:
+        events.extend(get_calendar_events(calendarId=calendar_list_entry['id'], **kwargs)['items'])
+    return events
 
 
 ################### TESTING ###################
@@ -96,6 +95,3 @@ def get_calendar_events(calendarId='primary', **kwargs):
 
 # events_today = [event['summary'] for event in result['items']]
 # print(events_today)
-
-
-# get events from all calendars

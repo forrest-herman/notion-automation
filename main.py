@@ -1,4 +1,5 @@
 import datetime
+import json
 # import json
 
 from credentials import config
@@ -59,9 +60,9 @@ exists = query_database_pages(database_id_journal, headers, today_query_payload)
 
 if exists:
     print("Page already exists")
-    # today = datetime.date.today() + datetime.timedelta(days=1)
-    # today = today.isoformat()
-    exit()
+    today = datetime.date.today() + datetime.timedelta(days=1)
+    today = today.isoformat()
+    # exit()
 
 # get the template page id and read it's blocks
 templatePage_id = query_database_pages(
@@ -115,7 +116,7 @@ newPageData_journal = {
 # add more content to the body of the page
 ##########################################
 
-# get all calendar events
+# get all calendar events for the current day
 today_start = datetime.datetime.now(datetime.timezone.utc).replace(
     hour=0, minute=0, second=0, microsecond=0)
 today_end = today_start + datetime.timedelta(days=1)
@@ -124,10 +125,23 @@ today_end = today_start + datetime.timedelta(days=1)
 today_start = today_start.isoformat()
 today_end = today_end.isoformat()
 
-result = gcal_methods.get_calendar_events(calendarId='primary', maxResults=10,
+events_from_all_calendars = gcal_methods.get_all_events(maxResults=10,
                                           timeMin=today_start, timeMax=today_end, singleEvents=True, orderBy='startTime')
 
-events_today = [event['summary'] for event in result['items']]
+# result = gcal_methods.get_calendar_events(calendarId='primary', maxResults=10,
+#                                           timeMin=today_start, timeMax=today_end, singleEvents=True, orderBy='startTime')
+
+events_today_info = [
+    {
+        'summary': event['summary'],
+        'htmlLink': event['htmlLink'],
+        'start': datetime.datetime.fromisoformat(event['start']['dateTime']),
+        'end': datetime.datetime.fromisoformat(event['end']['dateTime'])
+    } for event in events_from_all_calendars]
+
+# events_today = set(events_today)  # remove duplicates
+
+# print(json.dumps(events_today_info, indent=4))
 
 newBlocks = [
     {
@@ -140,7 +154,9 @@ newBlocks = [
                 {
                     "type": "text",
                     "text": {
-                        "content": event,
+                        "content": "{}: {} - {}".format(event['summary'], event['start'].strftime("%#I:%M %p"), event['end'].strftime("%#I:%M %p")),
+                        "link": {'type': 'url', 'url': event['htmlLink']
+                                 } if event['htmlLink'] else None,
                     },
                     "annotations": {
                         "bold": False,
@@ -154,7 +170,7 @@ newBlocks = [
             ],
             "color": "default"
         }
-    } for event in events_today
+    } for event in sorted(events_today_info, key=lambda x: x['start'])
 ]
 
 # add all the new blocks to the template
