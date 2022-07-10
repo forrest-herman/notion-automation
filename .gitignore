@@ -1,5 +1,6 @@
 __pycache__/
-config.py
+env/
+credentials/
 db.json
 json/
 .flake8

@@ -1,8 +1,10 @@
 import datetime
 # import json
 
-import config
+from credentials import config
 from api_methods import *
+
+import gcal_methods
 
 # from utils import save_json_to_file
 
@@ -20,8 +22,9 @@ headers = {
     "Authorization": "Bearer " + token
 }
 
+##################################################################
+
 # print(datetime.datetime.now().isoformat())
-# today = datetime.datetime.now().date().isoformat()
 today = datetime.date.today().isoformat()
 weekday = datetime.date.today().weekday()
 
@@ -31,6 +34,7 @@ if weekday < 5:  # monday - friday
 else:
     pageName = "Daily Summary Template"
 
+# prepare a payload to query the database
 template_query_payload = {
     "page_size": 10,
     "filter": {
@@ -40,7 +44,6 @@ template_query_payload = {
         }
     }
 }
-
 today_query_payload = {
     "page_size": 10,
     "filter": {
@@ -60,23 +63,24 @@ if exists:
     # today = today.isoformat()
     exit()
 
+# get the template page id and read it's blocks
 templatePage_id = query_database_pages(
     database_id_journal, headers, template_query_payload)[0]['id']
 templateBlocks = read_block_children_recursive(templatePage_id, headers)
 
-# get the property id of the jounral page template
+# get the property id of the jounral page template and read the property tags
 properties_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
-
-# get the tags from the template
 properties = read_page_properties(templatePage_id, properties_id, headers)
 
-# properties payload for the new page
+# build properties tag payload for the new page
 newPage_tags = {
     properties['type']: [{'name': multi_select['name']}
                          for multi_select in properties[properties['type']]]
 }
 
-# add more tags
+##########################################
+# add more tags to the properties of a page
+##########################################
 if weekday == 1:  # tuesday
     newPage_tags[properties['type']].append({'name': 'Groceries 🛒'})
 
@@ -107,6 +111,57 @@ newPageData_journal = {
     # "children": templateBlocks
 }
 
+##########################################
+# add more content to the body of the page
+##########################################
+
+# get all calendar events
+today_start = datetime.datetime.now(datetime.timezone.utc).replace(
+    hour=0, minute=0, second=0, microsecond=0)
+today_end = today_start + datetime.timedelta(days=1)
+
+# format the times for the API
+today_start = today_start.isoformat()
+today_end = today_end.isoformat()
+
+result = gcal_methods.get_calendar_events(calendarId='primary', maxResults=10,
+                                          timeMin=today_start, timeMax=today_end, singleEvents=True, orderBy='startTime')
+
+events_today = [event['summary'] for event in result['items']]
+
+newBlocks = [
+    {
+        "object": "block",
+        "has_children": False,
+        "archived": False,
+        "type": "bulleted_list_item",
+        "bulleted_list_item": {
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": event,
+                    },
+                    "annotations": {
+                        "bold": False,
+                        "italic": False,
+                        "strikethrough": False,
+                        "underline": False,
+                        "code": False,
+                        "color": "gray"
+                    },
+                }
+            ],
+            "color": "default"
+        }
+    } for event in events_today
+]
+
+# add all the new blocks to the template
+for count, block in enumerate(newBlocks):
+    # list.insert(index, elem)
+    templateBlocks.insert(1 + count, block)
+
 # create the new page
 newPage_id = create_page(headers, newPageData_journal)["id"]
 
@@ -114,11 +169,24 @@ newPage_id = create_page(headers, newPageData_journal)["id"]
 append_block_children(newPage_id, headers, templateBlocks)
 
 
+#########################
+# update page properites
+#########################
+newPageData_journal = {
+    "properties": {
+        "Tags":
+        {
+            "type": "multi_select",
+            "multi_select": [
+                {
+                    'name': 'Angèle 💕'
+                },
+            ]
+        }
+    },
+}
+
+# update_page(newPage_id, headers, newPageData_journal)
+
 # ------- further implementations -------
-
-# append the tags to the new page ???? no need
-# update_page()  # ----------------------------------------------- WIP
-# add tag depending on day of week etc.
 # add calendar events
-
-# if tuesday add Grocery Tag

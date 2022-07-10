@@ -64,7 +64,7 @@ def read_block_children_recursive(block_id, headers):
     res = requests.get(url, headers=headers)
     print(res.status_code)
     if (res.status_code != 200):
-        print(res.text)
+        print("read_block_children_recursive", res.text)
 
     data = res.json()
 
@@ -88,7 +88,7 @@ def append_block_children(block_id, headers, blocks_data):
     res = requests.patch(url, headers=headers, json=payload)
     print(res.status_code)
     if (res.status_code != 200):
-        print("append", res.text)
+        print("append_block_children", res.text)
 
     data = res.json()
 
@@ -104,7 +104,7 @@ def create_page(headers, newPageData):
     res = requests.post(url, headers=headers, json=newPageData)
     print(res.status_code)
     if (res.status_code != 200):
-        print("create", res.text)
+        print("create_page", res.text)
         exit()
 
     # save_json_to_file(res.json(), './json/new_page_data.json')
@@ -129,6 +129,10 @@ def update_page(page_id, headers, payload):
 
     res = requests.patch(url, headers=headers, json=payload)
     print(res.status_code)
+    if (res.status_code != 200):
+        print("update_page", res.text)
+        exit()
+
     # save_json_to_file(res.json(), './json/new_page_data.json')
 
     return res.json()
