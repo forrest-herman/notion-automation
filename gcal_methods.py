@@ -47,7 +47,7 @@ def get_calendar_service():
 
 
 def get_calendar_list():
-    service = get_calendar_service()
+    # service = get_calendar_service()
 
     page_token = None
     while True:
@@ -62,7 +62,7 @@ def get_calendar_list():
 
 def get_calendar_events(calendarId='primary', **kwargs):
     # https://developers.google.com/calendar/api/v3/reference/events/list
-    service = get_calendar_service()
+    # service = get_calendar_service()
     events = service.events().list(calendarId=calendarId, **kwargs).execute()
     return events
 
@@ -74,6 +74,10 @@ def get_all_events(**kwargs):
     for calendar_list_entry in calendar_list['items']:
         events.extend(get_calendar_events(calendarId=calendar_list_entry['id'], **kwargs)['items'])
     return events
+
+
+# main functions
+service = get_calendar_service()
 
 
 ################### TESTING ###################

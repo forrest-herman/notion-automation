@@ -60,9 +60,9 @@ exists = query_database_pages(database_id_journal, headers, today_query_payload)
 
 if exists:
     print("Page already exists")
-    today = datetime.date.today() + datetime.timedelta(days=1)
-    today = today.isoformat()
-    # exit()
+    # today = datetime.date.today() + datetime.timedelta(days=1)
+    # today = today.isoformat()
+    exit()
 
 # get the template page id and read it's blocks
 templatePage_id = query_database_pages(
