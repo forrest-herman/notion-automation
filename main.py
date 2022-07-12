@@ -1,5 +1,5 @@
 import datetime
-import json
+import os
 # import json
 
 from credentials import config
@@ -9,10 +9,14 @@ import gcal_methods
 
 # from utils import save_json_to_file
 
+# load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database
-
-token = config.token
 
 database_id_journal = '3f6b1a7d1198421f83365c74cdb7f23f'  # Journal
 
@@ -20,7 +24,7 @@ headers = {
     "Accept": "application/json",
     "Notion-Version": "2022-02-22",
     "Content-Type": "application/json",
-    "Authorization": "Bearer " + token
+    "Authorization": "Bearer " + TOKEN
 }
 
 ##################################################################
