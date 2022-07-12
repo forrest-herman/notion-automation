@@ -5,7 +5,10 @@ import os
 from credentials import config
 from api_methods import *
 
-import gcal_methods
+# custom package found at:
+# https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
+from google_calendar_integrations.gcal_methods import GoogleCalendarAccount
+from google_calendar_integrations import cal_utils
 
 # from utils import save_json_to_file
 
@@ -129,15 +132,25 @@ today_end = today_start + datetime.timedelta(days=1)
 today_start = today_start.isoformat()
 today_end = today_end.isoformat()
 
+# Google Calendar API
+
+# prepare file paths
+client_secret_location = 'credentials/gcal_client_secret.json'
+CREDENTIALS_FILE = os.path.join(
+    os.path.dirname(__file__), client_secret_location)
+token_location = 'credentials/token.pickle'
+TOKEN_FILE = os.path.join(os.path.dirname(__file__), token_location)
+
 try:
-    events_from_all_calendars = gcal_methods.get_all_events(
-        maxResults=10,
+    # create a Google Calendar API service object
+    cal = GoogleCalendarAccount(CREDENTIALS_FILE, TOKEN_FILE)
+
+    events_from_all_calendars = cal.get_all_events(
         timeMin=today_start,
         timeMax=today_end,
         singleEvents=True,
         orderBy='startTime'
     )
-
     """ Example:
     result = gcal_methods.get_calendar_events(
         calendarId='primary',
@@ -152,9 +165,11 @@ try:
     events_today_info = [
         {
             'summary': event['summary'],
+            'calendar': event['calendar'],
             'htmlLink': event['htmlLink'],
-            'start': datetime.datetime.fromisoformat(event['start']['dateTime']),
-            'end': datetime.datetime.fromisoformat(event['end']['dateTime'])
+            'start': cal_utils.get_datetime_from_event(event['start']),
+            # basically: event['end']['dateTime'] or event['end']['date']
+            'end': cal_utils.get_datetime_from_event(event['end'])
         } for event in events_from_all_calendars]
 
     # events_today = set(events_today)  # remove duplicates
