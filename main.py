@@ -173,6 +173,11 @@ try:
         } for event in events_from_all_calendars]
 
     # events_today = set(events_today)  # remove duplicates
+    # filter events
+    events_today_info = cal_utils.filter_events_by_calendar(
+        events_today_info, ['Personal old', 'angele.beaulne@gmail.com'],
+        exclude=True
+    )
 
     # print(json.dumps(events_today_info, indent=4))
 
