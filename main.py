@@ -1,14 +1,14 @@
 import datetime
 import os
-# import json
 
-from credentials import config
 from api_methods import *
 
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
 from google_calendar_integrations.gcal_methods import GoogleCalendarAccount
 from google_calendar_integrations import cal_utils
+# use this command to pull the latest changes:
+# pip install -e "git+https://github.com/forrest-herman/python-packages-common.git@main#egg=google_calendar_integrations&subdirectory=google_calendar_integrations"
 
 # from utils import save_json_to_file
 
@@ -124,13 +124,7 @@ newPageData_journal = {
 ##########################################
 
 # get all calendar events for the current day
-today_start = datetime.datetime.now(datetime.timezone.utc).replace(
-    hour=0, minute=0, second=0, microsecond=0)
-today_end = today_start + datetime.timedelta(days=1)
-
-# format the times for the API
-today_start = today_start.isoformat()
-today_end = today_end.isoformat()
+today_start, today_end = cal_utils.get_today_timerange()
 
 # Google Calendar API
 
@@ -179,65 +173,66 @@ try:
         exclude=True
     )
 
-    # print(json.dumps(events_today_info, indent=4))
-
-    newBlocks = [
-        {
-            "object": "block",
-            "has_children": False,
-            "archived": False,
-            "type": "bulleted_list_item",
-            "bulleted_list_item": {
-                "rich_text": [
-                    {
-                        "type": "text",
-                        "text": {
-                            "content": f"{event['summary']} ",
-                            "link": None,
-                        },
-                        "annotations": {
-                            "bold": False,
-                            "italic": False,
-                            "strikethrough": False,
-                            "underline": False,
-                            "code": False,
-                            "color": "gray"
-                        },
-                    },
-                    {
-                        "type": "text",
-                        "text": {
-                            "content": "({} - {})".format(
-                                event['start'].strftime("%#I:%M %p"),
-                                event['end'].strftime("%#I:%M %p")
-                            ),
-                            "link": {
-                                'type': 'url',
-                                'url': event['htmlLink']
-                            } if event['htmlLink'] else None,
-                        },
-                        "annotations": {
-                            "bold": False,
-                            "italic": False,
-                            "strikethrough": False,
-                            "underline": False,
-                            "code": False,
-                            "color": "gray"
-                        },
-                    }
-                ],
-                "color": "default"
-            }
-        } for event in sorted(events_today_info, key=lambda x: x['start'])
-    ]
-
 except Exception as e:
     print("Error with GCal API", e)
+
+# print(json.dumps(events_today_info, indent=4))
+
+newBlocks = [
+    {
+        "object": "block",
+        "has_children": False,
+        "archived": False,
+        "type": "bulleted_list_item",
+        "bulleted_list_item": {
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": f"{event['summary']}",
+                        "link": None,
+                    },
+                    "annotations": {
+                        "bold": False,
+                        "italic": False,
+                        "strikethrough": False,
+                        "underline": False,
+                        "code": False,
+                        "color": "gray"
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": {
+                        "content": " ({} - {})".format(
+                            event['start'].strftime("%#I:%M %p"),
+                            event['end'].strftime("%#I:%M %p")
+                        ) if not cal_utils.is_all_day(event) else " (all day)",
+                        "link": {
+                            'type': 'url',
+                            'url': event['htmlLink']
+                        } if event['htmlLink'] else None,
+                    },
+                    "annotations": {
+                        "bold": False,
+                        "italic": False,
+                        "strikethrough": False,
+                        "underline": False,
+                        "code": False,
+                        "color": "gray"
+                    },
+                }
+            ],
+            "color": "default"
+        }
+    } for event in sorted(events_today_info, key=lambda x: x['start'])
+]
 
 # add all the new blocks to the template
 for count, block in enumerate(newBlocks):
     # list.insert(index, elem)
     templateBlocks.insert(1 + count, block)
+
 
 # create the new page
 newPage_id = create_page(headers, newPageData_journal)["id"]
