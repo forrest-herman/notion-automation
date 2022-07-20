@@ -2,6 +2,7 @@ import datetime
 import os
 
 from notion_api_methods import *
+import goodreads
 
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
