@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from api_methods import *
+from notion_api_methods import *
 
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
