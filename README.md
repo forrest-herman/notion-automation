@@ -21,6 +21,7 @@
   - a `.env` file containing a Notion Integration `secret_key` in the form:
     - `token = 'secret_key'`
   - a `gcal_client_secret.json` file that contains the Google Auth 2.0 Client ID and Client secret for `InstalledAppFlow.from_client_secrets_file`, downloaded directly from `console.cloud.google.com/apis/credentials`
+  - These files should be stored at `project_dir/credentials/`
 
 ### Work in Progress
 - [x] Add calendar integration for events
