@@ -5,3 +5,4 @@ credentials/
 db.json
 json/
 .flake8
+.DS_Store
