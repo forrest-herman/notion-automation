@@ -9,7 +9,7 @@ import goodreads
 from dotenv import load_dotenv
 load_dotenv()
 
-TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+OS_NAME = os.getenv('OS')
 
 
 # Goodreads work here
