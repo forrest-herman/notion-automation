@@ -1,9 +1,26 @@
+import os
 import requests
 
 from utils import save_json_to_file
 
+# load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
-def read_database(database_id, headers):
+TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+
+# see instructions here
+# https://developers.notion.com/reference/retrieve-a-database
+
+HEADERS = {
+    "Accept": "application/json",
+    "Notion-Version": "2022-02-22",
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + TOKEN
+}
+
+
+def read_database(database_id, headers=HEADERS):
     url = f'https://api.notion.com/v1/databases/{database_id}'
     result = requests.get(url, headers=headers)
     print(result.status_code)
@@ -15,7 +32,7 @@ def read_database(database_id, headers):
     return data
 
 
-def query_database_pages(database_id, headers, query_payload):
+def query_database_pages(database_id, query_payload, headers=HEADERS):
     url = f'https://api.notion.com/v1/databases/{database_id}/query'
 
     result = requests.post(url, headers=headers, json=query_payload)
@@ -28,7 +45,7 @@ def query_database_pages(database_id, headers, query_payload):
     return data['results']
 
 
-def read_page_properties(page_id, property_id, headers):
+def read_page_properties(page_id, property_id, headers=HEADERS):
     """
     Read page properties.
     To obtain property_id's, use the read_database endpoint.
@@ -45,7 +62,7 @@ def read_page_properties(page_id, property_id, headers):
 
 
 # DELETE THIS?
-def read_block_children(block_id, headers):
+def read_block_children(block_id, headers=HEADERS):
     """ Read child blocks of a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
     res = requests.get(url, headers=headers)
@@ -58,7 +75,7 @@ def read_block_children(block_id, headers):
     return data["results"]
 
 
-def read_block_children_recursive(block_id, headers):
+def read_block_children_recursive(block_id, headers=HEADERS):
     """ Read child blocks of a page or block and their children, etc. """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
     res = requests.get(url, headers=headers)
@@ -77,7 +94,7 @@ def read_block_children_recursive(block_id, headers):
     return data["results"]
 
 
-def append_block_children(block_id, headers, blocks_data):
+def append_block_children(block_id, blocks_data, headers=HEADERS):
     """ Append child blocks to a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
 
@@ -97,7 +114,7 @@ def append_block_children(block_id, headers, blocks_data):
     return data
 
 
-def create_page(headers, newPageData):
+def create_page(newPageData, headers=HEADERS):
     """ Create a new page in the provided database """
     url = 'https://api.notion.com/v1/pages'
 
@@ -112,7 +129,7 @@ def create_page(headers, newPageData):
     return res.json()
 
 
-def update_page(page_id, headers, payload):
+def update_page(page_id, payload, headers=HEADERS):
     """
     This endpoint is for updating page properties, not page content.
     To fetch page content, use the retrieve block children endpoint.

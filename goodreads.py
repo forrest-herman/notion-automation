@@ -1,4 +1,5 @@
 import re
+import datetime
 from utils import write_to_file
 from utils import save_json_to_file
 from bs4 import BeautifulSoup
@@ -68,7 +69,7 @@ def get_books_data_list(html_str):
         a_link = td.find_all('a')[0]
         full_title = a_link.get('title')
         # parse title for a series component
-        find_series_regex = r"\s?[(\]]([a-zA-Z+&,']+\s)*#\d+\.?\d*[)\]]"
+        find_series_regex = r"\s+?[(\]]([a-zA-Z+&,']+\s)*#\d+\.?\d*[)\]]"
         series = re.search(find_series_regex, full_title)
         if series:
             # if it's a series, get the series name and fix the book title
@@ -81,7 +82,11 @@ def get_books_data_list(html_str):
         # parse author and author_url
         td = tr.find_all('td', {'class': 'field author'})[0]
         a_link = td.find_all('a')[0]
-        book_dict['author_name'] = a_link.text
+        last_comma_first = a_link.text
+        # capture the last name and first name
+        name_regex = re.search("(.*),\s(.*)", last_comma_first)
+        author_full_name = name_regex.group(2) + " " + name_regex.group(1)
+        book_dict['author_name'] = author_full_name
         book_dict['author_url'] = a_link.get('href')
 
         # parse rating
@@ -107,7 +112,7 @@ def get_books_data_list(html_str):
         td = tr.find_all('td', {'class': 'field date_started'})[0]
         span = td.find_all('span', {'class': 'date_started_value'})[0]
         date_started = span.text
-        book_dict['date_started'] = date_started
+        book_dict['date_started'] = convert_date_to_isoformat(date_started)
 
         # parse date_read
         td = tr.find_all('td', {'class': 'field date_read'})[0]
@@ -116,7 +121,7 @@ def get_books_data_list(html_str):
             date_read = span.text
         except IndexError:
             date_read = None  # not finished
-        book_dict['date_read'] = date_read
+        book_dict['date_read'] = convert_date_to_isoformat(date_read)
 
         book_list.append(book_dict)
 
@@ -129,7 +134,7 @@ def filter_and_sort_books(book_list, year):
     return sorted_list
 
 
-def get_read_and_reading(urls):
+def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING]):
     book_lists = []
 
     for url in urls:
@@ -139,6 +144,8 @@ def get_read_and_reading(urls):
         book_list = get_books_data_list(html_str)
         book_lists.append(book_list)
 
+        save_json_to_file(book_list, f'./json/books_{url[76:80]}.json')
+
     return book_lists
 
 
@@ -147,14 +154,23 @@ def get_read_and_reading(urls):
 # write_to_file(html, './json/goodreads_html.html')
 # books_read = get_books_data_list(html)
 
-# get currently reading books
-# currently_reading_html = get_html_using_selenium(URL_CURRENTLY_READING)
-# currently_reading = get_books_data_list(currently_reading_html)
+
+# books_read, currently_reading = get_read_and_reading(
+#     [URL_BOOKS_READ, URL_CURRENTLY_READING]
+# )
+
+# save_json_to_file(books_read, './json/books_read.json')
+# save_json_to_file(currently_reading, './json/books_currently_reading.json')
 
 
-books_read, currently_reading = get_read_and_reading(
-    [URL_BOOKS_READ, URL_CURRENTLY_READING]
-)
+def convert_date_to_isoformat(date_str):
+    if date_str is None:
+        return None
 
-save_json_to_file(books_read, './json/books_read.json')
-save_json_to_file(currently_reading, './json/books_currently_reading.json')
+    date_str = date_str.strip()
+    try:
+        date_obj = datetime.datetime.strptime(date_str, '%b %d, %Y')
+    except ValueError:
+        date_obj = datetime.datetime.strptime(date_str, '%b %Y')
+
+    return date_obj.strftime('%Y-%m-%d')
