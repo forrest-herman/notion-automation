@@ -1,6 +1,7 @@
 __pycache__/
 env/
 .env
+.envrc
 credentials/
 db.json
 json/
