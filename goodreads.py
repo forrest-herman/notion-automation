@@ -144,7 +144,7 @@ def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING]):
         book_list = get_books_data_list(html_str)
         book_lists.append(book_list)
 
-        save_json_to_file(book_list, f'./json/books_{url[76:80]}.json')
+        # save_json_to_file(book_list, f'./json/books_{url[76:80]}.json')
 
     return book_lists
 

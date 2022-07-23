@@ -2,6 +2,7 @@ import datetime
 import os
 
 from notion_api_methods import *
+import utils
 
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
@@ -15,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+OS_NAME = os.getenv('OS')
 
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database
@@ -243,8 +245,8 @@ def get_new_body_content():
                         "type": "text",
                         "text": {
                             "content": " ({} - {})".format(
-                                event['start'].strftime("%#I:%M %p"),
-                                event['end'].strftime("%#I:%M %p")
+                                event['start'].strftime(utils.get_12hr_time_format_for_os(OS_NAME)),
+                                event['end'].strftime(utils.get_12hr_time_format_for_os(OS_NAME))
                             ) if not cal_utils.is_all_day(event) else " (all day)",
                             "link": {
                                 'type': 'url',
