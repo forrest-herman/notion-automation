@@ -28,7 +28,8 @@ def get_rating_from_text(rating_text):
     return rating
 
 
-def get_books_data_list(html_str):
+def get_books_list_data_from_html(html_str):
+    """Check the My Books Feed and parse for all the books details. Such as read dates and author."""
     soup = BeautifulSoup(html_str, 'lxml')
 
     table = soup.find_all('table', {'id': 'books'})[0]
@@ -128,6 +129,38 @@ def get_books_data_list(html_str):
     return book_list
 
 
+def get_book_details_from_url(book_url):
+    """Get the book details from the url provided."""
+    # scrape the url for the html
+    html_str = get_html_using_selenium(book_url)
+
+    # parse the html string for the book details
+    soup = BeautifulSoup(html_str, 'lxml')
+
+    publication_html = soup.find_all(
+        'div',
+        {'id': 'details'}
+    )[0].find_all('div', {'class': 'row'})[1]
+    publication_date = re.search(r'Published\s+(.*)\s+', publication_html.text.strip()).group(1)
+
+    genres_list_html = soup.find_all('a', {'class': 'actionLinkLite bookPageGenreLink'})
+    genres = [genre.text for genre in genres_list_html]
+    genres = set(genres)  # use set to remove duplicates
+    if "Audiobook" in genres:
+        genres.remove("Audiobook")
+
+    numberOfPages_html = soup.find_all('span', {'itemprop': 'numberOfPages'})[0]
+    page_count = re.search(r'\d+', numberOfPages_html.text).group()
+    page_count = int(page_count)
+
+    book_details = {
+        'publication_date': publication_date,
+        'genres': list(genres),
+        'page_count': page_count,
+    }
+    return book_details
+
+
 def filter_and_sort_books(book_list, year):
     filtered_list = [i for i in book_list if year in i['date_read']]
     sorted_list = sorted(filtered_list, key=lambda k: k['date_read'], reverse=True)
@@ -141,7 +174,7 @@ def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING]):
         # get the webpage html
         html_str = get_html_using_selenium(url)
         # get the book data list (reading or read)
-        book_list = get_books_data_list(html_str)
+        book_list = get_books_list_data_from_html(html_str)
         book_lists.append(book_list)
 
         save_json_to_file(book_list, f'./json/books_{url[76:80]}.json')
@@ -152,7 +185,7 @@ def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING]):
 # get books read
 # html = get_html_using_selenium(URL_BOOKS_READ)
 # write_to_file(html, './json/goodreads_html.html')
-# books_read = get_books_data_list(html)
+# books_read = get_books_list_data_from_html(html)
 
 
 # books_read, currently_reading = get_read_and_reading(

@@ -1,10 +1,12 @@
 from notion_api_methods import *
 import notion_utils
+from goodreads import get_book_details_from_url
 
 from utils import save_json_to_file
 
 books_database_id = '252dcf91b52847888bf3d49357af4a7b'
 reads_database_id = '68d90801b2cd40e0a6a7a59616d073da'
+book_stats_id = '74b48b15ed1d468bb07e20adc555d01c'
 
 
 def update_reading_list(read_list, currently_reading_list):
@@ -97,6 +99,7 @@ def update_reading_list(read_list, currently_reading_list):
         # check if book is in the reading list
         notion_book = query_book_list(book)
         # if notion_book is None:
+        # finish this
 
         if(book['title'] not in notion_books):
             notion_book = create_book_page(book)
@@ -117,7 +120,21 @@ def update_reading_list(read_list, currently_reading_list):
     # END OF SCRIPT
 
 
+# BOOKS DATABASE
+
 def create_book_page(book_details):
+    goodreads_book_url = "https://www.goodreads.com" + book_details['book_url']
+    try:
+        additional_book_details = get_book_details_from_url(goodreads_book_url)
+        book_details.update(additional_book_details)
+    except Exception as e:
+        print(e)
+        # sometimes it fails for no reason, so we just retry
+        additional_book_details = get_book_details_from_url(goodreads_book_url)
+        book_details.update(additional_book_details)
+    except:
+        print('Error getting book details')
+
     newPageData_book = {
         "parent": {"database_id": books_database_id},
         "icon": {
@@ -135,7 +152,7 @@ def create_book_page(book_details):
                             "content": book_details['title'],
                             "link": {
                                 "type": "url",
-                                "url": "www.goodreads.com" + book_details['book_url']
+                                "url": goodreads_book_url
                             }
                         }
                     }
@@ -182,13 +199,26 @@ def create_book_page(book_details):
                     "name": "⭐️" * int(book_details['rating']),
                 } if book_details['rating'] else None
             },
-            # "Tags": {
-            #     "multi_select": [
-            #         {
-            #             'name': tag['name']
-            #         } for tag in book_details['tags']
-            #     ]
-            # },
+            "Publication Date": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": book_details.get('publication_date', ''),
+                        }
+                    }
+                ]
+            },
+            "Tags": {
+                "multi_select": [
+                    {
+                        'name': tag
+                    } for tag in book_details.get('genres', [])
+                ]
+            },
+            "Pages": {
+                "number": book_details['page_count'] if type(book_details.get("page_count", "")) == int else None
+            }
         },
     }
     newPage = create_page(newPageData_book)
@@ -220,10 +250,23 @@ def update_book_page(page_to_update, book_details):
                     "name": "⭐️" * int(book_details['rating']),
                 } if book_details['rating'] else None
             },
+            "Series": {
+                "type": "rich_text",
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": book_details['series'] if book_details['series'] else '',
+                        }
+                    }
+                ]
+            },
         },
     }
     return update_page(page_to_update['page_id'], newBookPageData)
 
+
+# READS DATABASE
 
 def add_read_date(notion_book_page_id, book_details):
     """Add a read date for a book"""
@@ -259,6 +302,14 @@ def add_read_date(notion_book_page_id, book_details):
                 "date": {
                     "start": book_details['date_read']
                 } if book_details['date_read'] else None
+            },
+            # Temp: make sure it's included in stats
+            "Stats": {
+                "relation": [
+                    {
+                        "id": book_stats_id
+                    }
+                ]
             }
         },
     }
@@ -327,3 +378,49 @@ def query_book_list(book_details):
     if len(result) > 0:
         return result[0]
     return None
+
+
+# -----------------------------
+# TEMP FUNCTIONS TO BUILD BOOKS
+# -----------------------------
+
+def custom_update_book_pages_with_details(page_to_update, book_details):
+    goodreads_book_url = "https://www.goodreads.com" + book_details['book_url']
+    try:
+        additional_book_details = get_book_details_from_url(goodreads_book_url)
+        book_details.update(additional_book_details)
+    except Exception as e:
+        print(e)
+        # sometimes it fails for no reason, so we just retry
+        additional_book_details = get_book_details_from_url(goodreads_book_url)
+        book_details.update(additional_book_details)
+    except:
+        print('Error getting book details')
+
+    # update page properites
+    newBookPageData = {
+        "properties": {
+            "Publication Date": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": book_details.get('publication_date', ''),
+                        }
+                    }
+                ]
+            },
+            "Tags": {
+                "multi_select": [
+                    {
+                        'name': tag
+                    } for tag in book_details.get('genres', [])
+                ]
+            },
+            "Pages": {
+                "number": book_details['page_count'] if type(book_details.get("page_count", "")) == int else None
+            }
+        },
+    }
+    # save_json_to_file(newBookPageData, 'json/newBookPageData.json')
+    return update_page(page_to_update['page_id'], newBookPageData)
