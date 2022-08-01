@@ -37,6 +37,8 @@ def query_database_pages(database_id, query_payload, headers=HEADERS):
 
     result = requests.post(url, headers=headers, json=query_payload)
     print(result.status_code)
+    if (result.status_code != 200):
+        print("query_database_pages:", result.text)
 
     data = result.json()
 
