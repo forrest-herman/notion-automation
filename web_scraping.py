@@ -63,7 +63,3 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     # write_to_file(my_html, './json/goodreads_html.html')
 
     return my_html
-
-
-get_html_using_selenium(
-    'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read')
