@@ -41,7 +41,7 @@ def update_reading_list(read_list, currently_reading_list):
     notion_books = {
         notion_utils.get_page_name(page, "Book Title"): {
             "author": page['properties']['Author']['select']['name'],
-            "page_id": page['id'],
+            "id": page['id'],
             "status": page["properties"]["Status"]["status"]["name"],
             "date_finished": page["properties"]["Date finished"]["date"]["start"] if page["properties"]["Date finished"]["date"] else None,
         } for page in notion_books_list
@@ -61,18 +61,18 @@ def update_reading_list(read_list, currently_reading_list):
             # book exists in the books database already
             notion_book = notion_books[book['title']]
 
-            notion_reads_list_result = query_read_list(notion_book, book)
+            notion_reads_list_result = query_reads_list(notion_book, book)
 
             # check if the book has already been added to the reads list
-            if len(notion_reads_list_result) > 0:
+            if notion_reads_list_result is not None:
                 print("Book exists on the reads list")
-                read_page = notion_reads_list_result[0]
+                read_page = notion_reads_list_result
                 if read_page.get("Date finished", {}) is not None:
                     update_read_date(read_page["id"], book)
                     print("Date finished updated")
             else:
                 # book needs to be added to the reads list
-                add_read_date(notion_book["page_id"], book)
+                add_read_date(notion_book["id"], book)
 
             # check if the book has been finished
             if(notion_book['status'] != 'Read' or notion_book['date_finished'] is None):
@@ -112,10 +112,10 @@ def update_reading_list(read_list, currently_reading_list):
             update_book_page(notion_book, book)
 
             # check if the book has already been added to the reads list
-            notion_reads_list_result = query_read_list(notion_book, book)
-            if len(notion_reads_list_result) == 0:
+            notion_reads_list_result = query_reads_list(notion_book, book)
+            if notion_reads_list_result is None:
                 # book needs to be added to the reads list
-                add_read_date(notion_book["page_id"], book)
+                add_read_date(notion_book["id"], book)
 
     # END OF SCRIPT
 
@@ -263,7 +263,7 @@ def update_book_page(page_to_update, book_details):
             },
         },
     }
-    return update_page(page_to_update['page_id'], newBookPageData)
+    return update_page(page_to_update["id"], newBookPageData)
 
 
 # READS DATABASE
@@ -332,14 +332,16 @@ def update_read_date(page_to_update_id, book_details):
     return update_page(page_to_update_id, updatePageData)
 
 
-def query_read_list(notion_book, book_details):
+# QUERY FOR NOTION DATABASE ENTRIES
+
+def query_reads_list(notion_book, book_details):
     read_list_query_payload = {
         "filter": {
             "and": [
                 {
                     "property": "Book",
                     "relation": {
-                        "contains": notion_book["page_id"]
+                        "contains": notion_book["id"]
                     }
                 },
                 {
@@ -352,7 +354,9 @@ def query_read_list(notion_book, book_details):
         },
     }
     result = query_database_pages(reads_database_id, read_list_query_payload)
-    return result
+    if len(result) > 0:
+        return result[0]
+    return None
 
 
 def query_book_list(book_details):
@@ -423,4 +427,4 @@ def custom_update_book_pages_with_details(page_to_update, book_details):
         },
     }
     # save_json_to_file(newBookPageData, 'json/newBookPageData.json')
-    return update_page(page_to_update['page_id'], newBookPageData)
+    return update_page(page_to_update["id"], newBookPageData)
