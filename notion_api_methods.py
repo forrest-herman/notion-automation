@@ -23,7 +23,8 @@ HEADERS = {
 def read_database(database_id, headers=HEADERS):
     url = f'https://api.notion.com/v1/databases/{database_id}'
     result = requests.get(url, headers=headers)
-    print(result.status_code)
+    if (result.status_code != 200):
+        print(result.status_code)
 
     data = result.json()
 
@@ -36,8 +37,8 @@ def query_database_pages(database_id, query_payload, headers=HEADERS):
     url = f'https://api.notion.com/v1/databases/{database_id}/query'
 
     result = requests.post(url, headers=headers, json=query_payload)
-    print(result.status_code)
     if (result.status_code != 200):
+        print(result.status_code)
         print("query_database_pages:", result.text)
 
     data = result.json()
@@ -54,7 +55,8 @@ def read_page_properties(page_id, property_id, headers=HEADERS):
     """
     url = f'https://api.notion.com/v1/pages/{page_id}/properties/{property_id}'
     res = requests.get(url, headers=headers)
-    print(res.status_code)
+    if (res.status_code != 200):
+        print(res.status_code)
 
     data = res.json()
 
@@ -68,7 +70,8 @@ def read_block_children(block_id, headers=HEADERS):
     """ Read child blocks of a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
     res = requests.get(url, headers=headers)
-    print(res.status_code)
+    if (res.status_code != 200):
+        print(res.status_code)
 
     data = res.json()
 
@@ -81,8 +84,8 @@ def read_block_children_recursive(block_id, headers=HEADERS):
     """ Read child blocks of a page or block and their children, etc. """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'
     res = requests.get(url, headers=headers)
-    print(res.status_code)
     if (res.status_code != 200):
+        print(res.status_code)
         print("read_block_children_recursive", res.text)
 
     data = res.json()
@@ -105,8 +108,8 @@ def append_block_children(block_id, blocks_data, headers=HEADERS):
     }
 
     res = requests.patch(url, headers=headers, json=payload)
-    print(res.status_code)
     if (res.status_code != 200):
+        print(res.status_code)
         print("append_block_children", res.text)
 
     data = res.json()
@@ -121,8 +124,8 @@ def create_page(newPageData, headers=HEADERS):
     url = 'https://api.notion.com/v1/pages'
 
     res = requests.post(url, headers=headers, json=newPageData)
-    print(res.status_code)
     if (res.status_code != 200):
+        print(res.status_code)
         print("create_page", res.text)
         exit()
 
@@ -147,8 +150,8 @@ def update_page(page_id, payload, headers=HEADERS):
     url = f'https://api.notion.com/v1/pages/{page_id}'
 
     res = requests.patch(url, headers=headers, json=payload)
-    print(res.status_code)
     if (res.status_code != 200):
+        print(res.status_code)
         print("update_page", res.text)
         exit()
 
