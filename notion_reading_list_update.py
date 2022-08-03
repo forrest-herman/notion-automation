@@ -61,19 +61,22 @@ def update_reading_list(read_list, currently_reading_list):
             # book exists in the books database already
             notion_book = notion_books[book['title']]
 
+            # logic for checking if book is in the reads database
             notion_reads_list_result = query_reads_list(notion_book, book)
 
             # check if the book has already been added to the reads list
             if notion_reads_list_result is not None:
-                print("Book exists on the reads list")
+                # print("Book exists on the reads list")
                 read_page = notion_reads_list_result
-                if read_page.get("Date finished", {}) is not None:
+                if read_page["properties"]["Date finished"].get("date", None) is not None:
                     update_read_date(read_page["id"], book)
                     print("Date finished updated")
             else:
                 # book needs to be added to the reads list
                 add_read_date(notion_book["id"], book)
+                print("Book added to the reads list")
 
+            # OUTDATED:
             # check if the book has been finished
             if(notion_book['status'] != 'Read' or notion_book['date_finished'] is None):
                 # check the author matches (in case of multiple books with same title)
@@ -94,7 +97,7 @@ def update_reading_list(read_list, currently_reading_list):
     # CURENTLY READING LIST
     for book in currently_reading_list:
         # create_or_update_book_page(book, notion_books)
-        print('Currently Reading', book['title'])
+        print('Currently Reading:', book['title'])
 
         # check if book is in the reading list
         notion_book = query_book_list(book)
@@ -106,7 +109,7 @@ def update_reading_list(read_list, currently_reading_list):
             print('Created new book page', book['title'])
             add_read_date(notion_book["id"], book)
         else:
-            print(book['title'], 'already exists')
+            # print(book['title'], 'already exists')
             notion_book = notion_books.get(book['title'], {})
 
             update_book_page(notion_book, book)
@@ -354,7 +357,9 @@ def query_reads_list(notion_book, book_details):
         },
     }
     result = query_database_pages(reads_database_id, read_list_query_payload)
+    print(result)
     if len(result) > 0:
+        save_json_to_file(result[0], f"json/reads/read_list_query_result{result[0]['id']}.json")
         return result[0]
     return None
 
