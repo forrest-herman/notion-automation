@@ -21,27 +21,36 @@ WINDOW_SIZE = "1200,1200"
 
 
 def get_chrome_driver_exact_location():
-    chrome_driver = ''
-    if OS_NAME == 'Windows_NT':
-        chrome_driver = 'chromedriver_win32/chromedriver.exe'
-    elif OS_NAME == 'Linux':
-        chrome_driver = 'chromedriver_linux64/chromedriver'
-    elif OS_NAME == 'MacOS':
-        chrome_driver = 'chromedriver_mac64/chromedriver'
-    else:
-        print(f'OS {OS_NAME} not supported')
-        exit()
+    if OS_NAME:
+        chrome_driver = ''
+        if OS_NAME == 'Windows_NT':
+            chrome_driver = 'chromedriver_win32/chromedriver.exe'
+        elif OS_NAME == 'Linux':
+            chrome_driver = 'chromedriver_linux64/chromedriver'
+        elif OS_NAME == 'MacOS':
+            chrome_driver = 'chromedriver_mac64/chromedriver'
+        else:
+            print(f'OS {OS_NAME} not supported')
+            return None
 
-    return f'chromedrivers/{chrome_driver}'
+        chrome_driver_path = f'chromedrivers/{chrome_driver}'
+        return os.path.join(os.path.dirname(__file__), chrome_driver_path)
+
+    # no OS name found
+    return os.getenv('CHROME_DRIVER_PATH')
 
 
-CHROME_DRIVER_PATH = os.path.join(
-    os.path.dirname(__file__), get_chrome_driver_exact_location())
+CHROME_DRIVER_PATH = get_chrome_driver_exact_location()
 
 
 def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     options = webdriver.ChromeOptions()
-    options.add_argument("headless")
+    with os.environ.get("GOOGLE_CHROME_BIN") as chrome_bin:
+        if chrome_bin:
+            options.binary_location = chrome_bin
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+    options.add_argument("--headless")
     options.add_argument("--window-size=%s" % WINDOW_SIZE)
     options.add_argument('--log-level=1')
     driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
