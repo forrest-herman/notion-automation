@@ -17,6 +17,7 @@ https://ankitmodi.github.io/intro-to-web-scraping-using-python-on-goodreads/
 
 Make sure the correct chrome driver is installed https://chromedriver.chromium.org/
 '''
+WINDOW_SIZE = "1200,1200"
 
 
 def get_chrome_driver_exact_location():
@@ -39,9 +40,12 @@ CHROME_DRIVER_PATH = os.path.join(
 
 
 def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
-    print(chrome_driver)
+    options = webdriver.ChromeOptions()
+    options.add_argument("headless")
+    options.add_argument("--window-size=%s" % WINDOW_SIZE)
+    options.add_argument('--log-level=1')
+    driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
 
-    driver = webdriver.Chrome(executable_path=chrome_driver)
     driver.get(url)
 
     # handle infinite scroll
