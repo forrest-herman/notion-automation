@@ -12,7 +12,7 @@ book_stats_id = '74b48b15ed1d468bb07e20adc555d01c'
 def update_reading_list(read_list, currently_reading_list):
     """
     Take in list of books read and currently reading from Goodreads
-    and update the reading list in Notion.
+    and update the library and reading list in Notion.
     """
 
     # check Notion for currently reading
@@ -31,8 +31,6 @@ def update_reading_list(read_list, currently_reading_list):
         # ]
     }
     notion_books_list = query_database_pages(books_database_id, query_payload)
-    # save_json_to_file(notion_books_list, 'json/notion_books_list.json')
-    # notion_reads_list = query_database_pages(reads_database_id, query_payload)
 
     # the following needs to be changed
     # ONCE WE HAVE MORE THAN 100 BOOKS!!!!!!!
@@ -50,7 +48,7 @@ def update_reading_list(read_list, currently_reading_list):
     # READ LIST
     # check all books in reading list
     for book in read_list:
-        # check if book is in the reading list
+        # check if book is already in notion:
         # query the books database
         notion_book = query_book_list(book)
         if notion_book:
@@ -66,11 +64,11 @@ def update_reading_list(read_list, currently_reading_list):
 
             # check if the book has already been added to the reads list
             if notion_reads_list_result is not None:
-                # print("Book exists on the reads list")
+                # Book exists already on the reads list
                 read_page = notion_reads_list_result
-                if read_page["properties"]["Date finished"].get("date", None) is not None:
+                if read_page["properties"]["Date finished"].get("date", None) is None:
                     update_read_date(read_page["id"], book)
-                    print("Date finished updated")
+                    print("Date finished updated:", book['title'])
             else:
                 # book needs to be added to the reads list
                 add_read_date(notion_book["id"], book)
@@ -78,38 +76,34 @@ def update_reading_list(read_list, currently_reading_list):
 
             # OUTDATED:
             # check if the book has been finished
-            if(notion_book['status'] != 'Read' or notion_book['date_finished'] is None):
-                # check the author matches (in case of multiple books with same title)
-                if(notion_book['author'] != book['author_name']):
-                    print('Author mismatch, skipping')
-                    continue
+            if(notion_book['status'] != 'Read'):  # notion_book['properties']['Status']['status']['name']
                 # update the book page
                 # change status to READ and update date_finished
                 update_book_page(notion_book, book)
                 print("Updated", book['title'], "to Read")
         else:
             # if book doesn't exist, create it
-            print('create new book page', book['title'])
             notion_book = create_book_page(book)
-            print(notion_book)
+            print('Created new book page:', book['title'])
             add_read_date(notion_book["id"], book)
 
     # CURENTLY READING LIST
     for book in currently_reading_list:
-        # create_or_update_book_page(book, notion_books)
         print('Currently Reading:', book['title'])
 
-        # check if book is in the reading list
+        # check if book is already in notion:
         notion_book = query_book_list(book)
-        # if notion_book is None:
-        # finish this
 
+        if notion_book is None:
+            # create the book page
+            # # finish this
+            pass
         if(book['title'] not in notion_books):
             notion_book = create_book_page(book)
             print('Created new book page', book['title'])
             add_read_date(notion_book["id"], book)
         else:
-            # print(book['title'], 'already exists')
+            # The book exists already in the Notion books database
             notion_book = notion_books.get(book['title'], {})
 
             update_book_page(notion_book, book)
@@ -119,8 +113,13 @@ def update_reading_list(read_list, currently_reading_list):
             if notion_reads_list_result is None:
                 # book needs to be added to the reads list
                 add_read_date(notion_book["id"], book)
+                print('Added', book['title'], 'to the reads list')
 
     # END OF SCRIPT
+
+
+# Helper functions
+# def create_or_update_book_page(book, notion_books)
 
 
 # BOOKS DATABASE
@@ -325,6 +324,11 @@ def update_read_date(page_to_update_id, book_details):
     # update page details
     updatePageData = {
         "properties": {
+            "Date started": {
+                "date": {
+                    "start": book_details['date_started']
+                }
+            },
             "Date finished": {
                 "date": {
                     "start": book_details['date_read']
@@ -357,7 +361,6 @@ def query_reads_list(notion_book, book_details):
         },
     }
     result = query_database_pages(reads_database_id, read_list_query_payload)
-    print(result)
     if len(result) > 0:
         save_json_to_file(result[0], f"json/reads/read_list_query_result{result[0]['id']}.json")
         return result[0]
