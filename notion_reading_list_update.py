@@ -47,31 +47,31 @@ def update_reading_list(read_list, currently_reading_list):
 
     # READ LIST
     # check all books in reading list
-    for book in read_list:
+    for goodreads_book in read_list:
         # check if book is already in notion:
         # query the books database
-        notion_book = query_book_list(book)
+        notion_book = query_book_list(goodreads_book)
         if notion_book:
             pass
             # print(notion_book["properties"]["Book Title"]["title"][0]["text"]["content"])
 
-        if(book['title'] in notion_books):
+        if(goodreads_book['title'] in notion_books):
             # book exists in the books database already
-            notion_book = notion_books[book['title']]
+            notion_book = notion_books[goodreads_book['title']]
 
             # logic for checking if book is in the reads database
-            notion_reads_list_result = query_reads_list(notion_book, book)
+            read_page = query_reads_list(notion_book, goodreads_book)
 
             # check if the book has already been added to the reads list
-            if notion_reads_list_result is not None:
+            if read_page is not None:
                 # Book exists already on the reads list
-                read_page = notion_reads_list_result
+                # check if it has a finish date
                 if read_page["properties"]["Date finished"].get("date", None) is None:
-                    update_read_date(read_page["id"], book)
-                    print("Date finished updated:", book['title'])
+                    update_read_date(read_page["id"], goodreads_book)
+                    print("Date finished updated:", goodreads_book['title'])
             else:
                 # book needs to be added to the reads list
-                add_read_date(notion_book["id"], book)
+                add_read_date(notion_book["id"], goodreads_book)
                 print("Book added to the reads list")
 
             # OUTDATED:
@@ -79,41 +79,41 @@ def update_reading_list(read_list, currently_reading_list):
             if(notion_book['status'] != 'Read'):  # notion_book['properties']['Status']['status']['name']
                 # update the book page
                 # change status to READ and update date_finished
-                update_book_page(notion_book, book)
-                print("Updated", book['title'], "to Read")
+                update_book_page(notion_book, goodreads_book)
+                print("Updated", goodreads_book['title'], "to Read")
         else:
             # if book doesn't exist, create it
-            notion_book = create_book_page(book)
-            print('Created new book page:', book['title'])
-            add_read_date(notion_book["id"], book)
+            notion_book = create_book_page(goodreads_book)
+            print('Created new book page:', goodreads_book['title'])
+            add_read_date(notion_book["id"], goodreads_book)
 
     # CURENTLY READING LIST
-    for book in currently_reading_list:
-        print('Currently Reading:', book['title'])
+    for goodreads_book in currently_reading_list:
+        print('Currently Reading:', goodreads_book['title'])
 
         # check if book is already in notion:
-        notion_book = query_book_list(book)
+        notion_book = query_book_list(goodreads_book)
 
         if notion_book is None:
             # create the book page
             # # finish this
             pass
-        if(book['title'] not in notion_books):
-            notion_book = create_book_page(book)
-            print('Created new book page', book['title'])
-            add_read_date(notion_book["id"], book)
+        if(goodreads_book['title'] not in notion_books):
+            notion_book = create_book_page(goodreads_book)
+            print('Created new book page', goodreads_book['title'])
+            add_read_date(notion_book["id"], goodreads_book)
         else:
             # The book exists already in the Notion books database
-            notion_book = notion_books.get(book['title'], {})
+            notion_book = notion_books.get(goodreads_book['title'], {})
 
-            update_book_page(notion_book, book)
+            update_book_page(notion_book, goodreads_book)
 
             # check if the book has already been added to the reads list
-            notion_reads_list_result = query_reads_list(notion_book, book)
-            if notion_reads_list_result is None:
+            read_page = query_reads_list(notion_book, goodreads_book)
+            if read_page is None:
                 # book needs to be added to the reads list
-                add_read_date(notion_book["id"], book)
-                print('Added', book['title'], 'to the reads list')
+                add_read_date(notion_book["id"], goodreads_book)
+                print('Added', goodreads_book['title'], 'to the reads list')
 
     # END OF SCRIPT
 
