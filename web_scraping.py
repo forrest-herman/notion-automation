@@ -17,31 +17,44 @@ https://ankitmodi.github.io/intro-to-web-scraping-using-python-on-goodreads/
 
 Make sure the correct chrome driver is installed https://chromedriver.chromium.org/
 '''
+WINDOW_SIZE = "1200,1200"
 
 
 def get_chrome_driver_exact_location():
-    chrome_driver = ''
-    if OS_NAME == 'Windows_NT':
-        chrome_driver = 'chromedriver_win32/chromedriver.exe'
-    elif OS_NAME == 'Linux':
-        chrome_driver = 'chromedriver_linux64/chromedriver'
-    elif OS_NAME == 'MacOS':
-        chrome_driver = 'chromedriver_mac64/chromedriver'
-    else:
-        print(f'OS {OS_NAME} not supported')
-        exit()
+    if OS_NAME:
+        chrome_driver = ''
+        if OS_NAME == 'Windows_NT':
+            chrome_driver = 'chromedriver_win32/chromedriver.exe'
+        elif OS_NAME == 'Linux':
+            chrome_driver = 'chromedriver_linux64/chromedriver'
+        elif OS_NAME == 'MacOS':
+            chrome_driver = 'chromedriver_mac64/chromedriver'
+        else:
+            print(f'OS {OS_NAME} not supported')
+            return None
 
-    return f'chromedrivers/{chrome_driver}'
+        chrome_driver_path = f'chromedrivers/{chrome_driver}'
+        return os.path.join(os.path.dirname(__file__), chrome_driver_path)
+
+    # no OS name found
+    return os.getenv('CHROME_DRIVER_PATH')
 
 
-CHROME_DRIVER_PATH = os.path.join(
-    os.path.dirname(__file__), get_chrome_driver_exact_location())
+CHROME_DRIVER_PATH = get_chrome_driver_exact_location()
 
 
 def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
-    print(chrome_driver)
+    options = webdriver.ChromeOptions()
+    with os.environ.get("GOOGLE_CHROME_BIN") as chrome_bin:
+        if chrome_bin:
+            options.binary_location = chrome_bin
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+    options.add_argument("--headless")
+    options.add_argument("--window-size=%s" % WINDOW_SIZE)
+    options.add_argument('--log-level=1')
+    driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
 
-    driver = webdriver.Chrome(executable_path=chrome_driver)
     driver.get(url)
 
     # handle infinite scroll
@@ -63,7 +76,3 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     # write_to_file(my_html, './json/goodreads_html.html')
 
     return my_html
-
-
-get_html_using_selenium(
-    'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read')

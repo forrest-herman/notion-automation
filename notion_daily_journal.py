@@ -70,7 +70,7 @@ def build_template_query_payload():
     exists = query_database_pages(database_id_journal, today_query_payload)
 
     if exists:
-        print("Page already exists")
+        print("Journal page already exists")
         # today = datetime.date.today() + datetime.timedelta(days=1)
         # today = today.isoformat()
         exit()
