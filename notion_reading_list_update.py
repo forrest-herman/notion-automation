@@ -318,7 +318,7 @@ def query_reads_list(notion_book, book_details):
     }
     result = query_database_pages(reads_database_id, read_list_query_payload)
     if len(result) > 0:
-        save_json_to_file(result[0], f"json/reads/read_list_query_result{result[0]['id']}.json")
+        # save_json_to_file(result[0], f"json/reads/read_list_query_result{result[0]['id']}.json")
         return result[0]
     return None
 
