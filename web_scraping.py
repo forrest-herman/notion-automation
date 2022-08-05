@@ -17,6 +17,7 @@ https://ankitmodi.github.io/intro-to-web-scraping-using-python-on-goodreads/
 
 Make sure the correct chrome driver is installed https://chromedriver.chromium.org/
 '''
+
 WINDOW_SIZE = "1200,1200"
 
 
@@ -45,11 +46,14 @@ CHROME_DRIVER_PATH = get_chrome_driver_exact_location()
 
 def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     options = webdriver.ChromeOptions()
-    with os.environ.get("GOOGLE_CHROME_BIN") as chrome_bin:
-        if chrome_bin:
-            options.binary_location = chrome_bin
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--no-sandbox")
+
+    # for heroku use this:
+    chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
+    if chrome_bin:
+        options.binary_location = chrome_bin
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--no-sandbox")
+
     options.add_argument("--headless")
     options.add_argument("--window-size=%s" % WINDOW_SIZE)
     options.add_argument('--log-level=1')
@@ -73,6 +77,6 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     my_html = driver.page_source
     driver.quit()
 
-    # write_to_file(my_html, './json/goodreads_html.html')
+    # write_to_file(my_html, './json/goodreads_html_2.html')
 
     return my_html
