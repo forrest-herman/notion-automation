@@ -126,7 +126,8 @@ def create_page(newPageData, headers=HEADERS):
     res = requests.post(url, headers=headers, json=newPageData)
     if (res.status_code != 200):
         print(res.status_code)
-        print("create_page", res.text)
+        print("create_page error:", res.text)
+        print("newPageData:", newPageData)
         exit()
 
     # save_json_to_file(res.json(), './json/new_page_data.json')
