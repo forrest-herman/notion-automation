@@ -15,42 +15,12 @@ def update_reading_list(read_list, currently_reading_list):
     and update the library and reading list in Notion.
     """
 
-    # check Notion for currently reading
-    query_payload = {
-        "filter": {
-            "property": "Book Title",
-            "rich_text": {
-                "is_not_empty": True
-            }
-        },
-        # "sorts": [
-        #     {
-        #         "property": "Date started",
-        #         "direction": "descending"
-        #     }
-        # ]
-    }
-    notion_books_list = query_database_pages(books_database_id, query_payload)
-
-    # the following needs to be changed
-    # ONCE WE HAVE MORE THAN 100 BOOKS!!!!!!!
-    # IDEA: Custom payload with book title for the query!
-    # also check author!
-    notion_books = {
-        notion_utils.get_page_name(page, "Book Title"): {
-            "author": page['properties']['Author']['select']['name'],
-            "id": page['id'],
-            "status": page["properties"]["Status"]["status"]["name"],
-            "date_finished": page["properties"]["Date finished"]["date"]["start"] if page["properties"]["Date finished"]["date"] else None,
-        } for page in notion_books_list
-    }
-
     # READ LIST
     # check all books in reading list
     for goodreads_book in read_list:
         # check if book is already in notion:
-        # query the books database
-        notion_book = query_book_list(goodreads_book)
+        notion_book = query_book_list(goodreads_book)  # query the books database
+
         if notion_book:
             # book exists in the books database already
 
@@ -68,7 +38,7 @@ def update_reading_list(read_list, currently_reading_list):
                 print("Book added to the reads list")
 
             # check if the book status is correct
-            if(notion_book['properties']['Status']['status']['name'] != 'Read'):
+            if(notion_book['properties']['Status']['status'] is None or notion_book['properties']['Status']['status']['name'] != 'Read'):
                 # update the book page
                 update_book_page(notion_book, goodreads_book)
                 print("Updated", goodreads_book['title'], "to Read")
