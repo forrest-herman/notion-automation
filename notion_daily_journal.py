@@ -4,6 +4,8 @@ import os
 from notion_api_methods import *
 import utils
 
+import cloudinary
+
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
 from google_calendar_integrations.gcal_methods import GoogleCalendarAccount
@@ -158,20 +160,18 @@ def generate_journal_entry():
     ##########################################
 
 
-def get_new_body_content():
-    # add more content to the body of the page
-
-    # get all calendar events for the current day
-    today_start, today_end = cal_utils.get_today_timerange()
-
-    # Google Calendar API
-
+def get_todays_events(today_start, today_end):
     # prepare file paths
-    client_secret_location = 'credentials/gcal_client_secret.json'
-    CREDENTIALS_FILE = os.path.join(
-        os.path.dirname(__file__), client_secret_location)
-    token_location = 'credentials/token.pickle'
-    TOKEN_FILE = os.path.join(os.path.dirname(__file__), token_location)
+
+    if OS_NAME:
+        client_secret_location = 'credentials/gcal_client_secret.json'
+        CREDENTIALS_FILE = os.path.join(
+            os.path.dirname(__file__), client_secret_location)
+        token_location = 'credentials/token.pickle'
+        TOKEN_FILE = os.path.join(os.path.dirname(__file__), token_location)
+    else:
+        CREDENTIALS_FILE = 'google-credentials.json'
+        TOKEN_FILE = cloudinary.utils.cloudinary_url("token.pickle", resource_type="raw")
 
     try:
         # create a Google Calendar API service object
@@ -183,7 +183,7 @@ def get_new_body_content():
             singleEvents=True,
             orderBy='startTime'
         )
-        """ 
+        """
         Example:
 
         result = gcal_methods.get_calendar_events(
@@ -212,10 +212,21 @@ def get_new_body_content():
             events_today_info, ['Personal old', 'angele.beaulne@gmail.com'],
             exclude=True
         )
+        return events_today_info
 
     except Exception as e:
         print("Error with GCal API", e)
+        return []
 
+
+def get_new_body_content():
+    # add more content to the body of the page
+
+    # get all calendar events for the current day
+    today_start, today_end = cal_utils.get_today_timerange()
+
+    # Google Calendar API
+    events_today_info = get_todays_events(today_start, today_end)
     # print(json.dumps(events_today_info, indent=4))
 
     newBlocks = [
