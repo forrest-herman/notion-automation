@@ -6,7 +6,10 @@ from utils import save_json_to_file
 
 books_database_id = '252dcf91b52847888bf3d49357af4a7b'
 reads_database_id = '68d90801b2cd40e0a6a7a59616d073da'
-book_stats_id = '74b48b15ed1d468bb07e20adc555d01c'
+
+all_book_stats_id = '74b48b15ed1d468bb07e20adc555d01c'
+# TODO: use database lookup to find the id for the correct year
+book_stats_2022_id = '096a5fbdc1b64f3dbc0681b083d0349f'
 
 
 def update_reading_list(read_list, currently_reading_list):
@@ -261,11 +264,14 @@ def add_read_date(notion_book_page_id, book_details):
                     "start": book_details['date_read']
                 } if book_details['date_read'] else None
             },
-            # Temp: make sure it's included in stats
+            # Temp: make sure it's included in stats, both all books and the current year
             "Stats": {
                 "relation": [
                     {
-                        "id": book_stats_id
+                        "id": all_book_stats_id
+                    },
+                    {
+                        "id": book_stats_2022_id
                     }
                 ]
             }
