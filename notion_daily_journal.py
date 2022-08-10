@@ -172,7 +172,7 @@ def get_todays_events(today_start, today_end):
     else:
         CREDENTIALS_FILE = 'google-credentials.json'
         # TOKEN_FILE = cloudinary.utils.cloudinary_url("token.pickle", resource_type="raw")
-        TOKEN_FILE = 'credentials/token.pickle'
+        TOKEN_FILE = 'token.pickle'
 
     try:
         # create a Google Calendar API service object
