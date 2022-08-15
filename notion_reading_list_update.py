@@ -296,7 +296,21 @@ def update_read_date(page_to_update_id, book_details):
                     "start": book_details['date_read']
                 }
             },
-        },
+            # in case of date started change
+            "Date": {
+                "title": [
+                    {
+                        "type": "mention",
+                        "mention": {
+                            "type": "date",
+                            "date": {
+                                "start": book_details['date_started'],
+                            }
+                        }
+                    }
+                ]
+            }
+        }
     }
     return update_page(page_to_update_id, updatePageData)
 
@@ -314,10 +328,20 @@ def query_reads_list(notion_book, book_details):
                     }
                 },
                 {
-                    "property": "Date started",
-                    "date": {
-                        "equals": book_details["date_started"]
-                    }
+                    "or": [
+                        {
+                            "property": "Date started",
+                            "date": {
+                                "equals": book_details["date_started"]
+                            }
+                        },
+                        {
+                            "property": "Date finished",
+                            "date": {
+                                "is_empty": True
+                            }
+                        }
+                    ]
                 }
             ]
         },
