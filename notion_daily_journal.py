@@ -4,8 +4,6 @@ import os
 from notion_api_methods import *
 import utils
 
-import cloudinary
-
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
 from google_calendar_integrations.gcal_methods import GoogleCalendarAccount
@@ -34,7 +32,8 @@ headers = {
 
 
 # print(datetime.datetime.now().isoformat())
-today = datetime.date.today().isoformat()
+today = datetime.date.today() - datetime.timedelta(days=1)
+today = today.isoformat()
 weekday = datetime.date.today().weekday()
 
 
@@ -75,7 +74,7 @@ def build_template_query_payload():
         print("Journal page already exists")
         # today = datetime.date.today() + datetime.timedelta(days=1)
         # today = today.isoformat()
-        exit()
+        return None
 
     return template_query_payload
 
@@ -86,6 +85,9 @@ def generate_journal_entry():
     """Main script to create daily journal entry."""
 
     template_query_payload = build_template_query_payload()
+
+    if template_query_payload is None:
+        return True
 
     # get the template page id and read it's blocks
     templatePage_id = query_database_pages(
