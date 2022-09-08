@@ -148,12 +148,12 @@ def create_book_page(book_details):
                     "start": book_details['date_read']
                 } if book_details['date_read'] else None
             },
-            # "Status": {
-            #     "type": "status",
-            #     "status": {
-            #         "name": "Read" if book_details['date_read'] else "Currently Reading",
-            #     }
-            # },
+            "Status": {
+                "type": "status",
+                "status": {
+                    "name": "Read" if book_details['date_read'] else "Currently Reading",
+                }
+            },
             "Rating": {
                 "type": "select",
                 "select": {
@@ -200,11 +200,11 @@ def update_book_page(page_to_update, book_details):
                     "start": book_details['date_read']
                 } if book_details['date_read'] else None
             },
-            # "Status": {
-            #     "status": {
-            #         "name": "Read" if book_details['date_read'] else "Currently Reading",
-            #     }
-            # },
+            "Status": {
+                "status": {
+                    "name": "Read" if book_details['date_read'] else "Currently Reading",
+                }
+            },
             "Rating": {
                 "type": "select",
                 "select": {
