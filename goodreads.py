@@ -84,6 +84,10 @@ def get_books_list_data_from_html(html_str):
         td = tr.find_all('td', {'class': 'field author'})[0]
         a_link = td.find_all('a')[0]
         last_comma_first = a_link.text
+
+        if last_comma_first == 'NOT A BOOK':
+            continue
+
         # capture the last name and first name
         name_regex = re.search("(.*),\s(.*)", last_comma_first)
         author_full_name = name_regex.group(2) + " " + name_regex.group(1)
