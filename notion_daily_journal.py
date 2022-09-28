@@ -199,7 +199,7 @@ def get_todays_events(today_start, today_end):
 
         events_today_info = [
             {
-                'summary': event['summary'],
+                'summary': cal_utils.get_summary_if_possible(event),
                 'calendar': event['calendar'],
                 'htmlLink': event['htmlLink'],
                 'start': cal_utils.get_datetime_from_event(event['start']),
