@@ -12,15 +12,15 @@ google-api-python-client==2.52.0
 google-auth==2.9.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.2
--e git+https://github.com/forrest-herman/python-packages-common.git@5fd6e01b42a777dfb9d7d70e672da6ae93a70da8#egg=google_calendar_integrations&subdirectory=google_calendar_integrations
+-e git+https://github.com/forrest-herman/python-packages-common.git@e7e459dd3384af7b12b7bfb8ae98e9efb773d1b4#egg=google_calendar_integrations&subdirectory=google_calendar_integrations
 googleapis-common-protos==1.56.3
 h11==0.13.0
 httplib2==0.20.4
 idna==3.3
 lxml==4.9.1
-oauthlib==3.2.0
+# oauthlib==3.2.1
 outcome==1.2.0
-protobuf==4.21.2
+# protobuf==4.21.6
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
