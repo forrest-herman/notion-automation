@@ -139,7 +139,7 @@ def generate_journal_entry():
     }
 
     # add more content to the body of the page
-    newBlocks = get_new_body_content()
+    newBlocks, events_today_info = get_new_body_content_and_cal_events()
 
     # add all the new blocks to the template
     for count, block in enumerate(newBlocks):
@@ -154,6 +154,9 @@ def generate_journal_entry():
 
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
+
+    # check if certain events match page property tags
+    check_for_event_tags(newPage_id, events_today_info)
 
     ##########################################
     # END OF MAIN SCRIPT
@@ -182,7 +185,8 @@ def get_todays_events(today_start, today_end):
             timeMin=today_start,
             timeMax=today_end,
             singleEvents=True,
-            orderBy='startTime'
+            orderBy='startTime',
+            timeZone='America/Toronto'
         )
         """
         Example:
@@ -220,7 +224,7 @@ def get_todays_events(today_start, today_end):
         return []
 
 
-def get_new_body_content():
+def get_new_body_content_and_cal_events():
     # add more content to the body of the page
 
     # get all calendar events for the current day
@@ -279,23 +283,56 @@ def get_new_body_content():
             }
         } for event in sorted(events_today_info, key=lambda x: x['start'])
     ]
-    return newBlocks
+    return newBlocks, events_today_info
 
 
-def update_journal_page_properties(newPage_id):
+def update_journal_page_tags(newPage_id, tags):
+    tag_object = {
+        "Tags": {
+            "type": "multi_select",
+            "multi_select": [
+                {
+                    'name': tag
+                } for tag in tags
+            ]
+        }
+    }
+    return update_journal_page_properties(newPage_id, tag_object)
+
+
+def update_journal_page_properties(newPage_id, new_properties_dict):
+    """ 
+    "properties": {
+        "Tags": {
+            "type": "multi_select",
+            "multi_select": [
+                {
+                    'name': 'Angèle 💕'
+                },
+            ]
+        }
+    },
+    """
     # update page properites
     newPageData_journal = {
-        "properties": {
-            "Tags":
-            {
-                "type": "multi_select",
-                "multi_select": [
-                    {
-                        'name': 'Angèle 💕'
-                    },
-                ]
-            }
-        },
+        "properties": new_properties_dict
     }
 
     return update_page(newPage_id, newPageData_journal)
+
+
+def check_for_event_tags(newPage_id, events_today_info):
+    # TODO: get list of Journal tags from Notion
+    # TODO: Loop through and check if any of the events today match the tags using regex
+    # tag_short = re.search(r'([a-Z]+)', tag.lower())
+    # if tag_short in event['summary'].lower()
+
+    # check if certain events match page property tags
+    # if so, add the tag to the page
+    tags = []
+
+    for event in events_today_info:
+        if 'fencing' in event['summary'].lower():
+            tags.append('Fencing 🤺')
+
+    return update_journal_page_tags(newPage_id, tags)
