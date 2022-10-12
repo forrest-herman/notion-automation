@@ -93,23 +93,33 @@ def generate_journal_entry():
     templateBlocks = read_block_children_recursive(templatePage_id, headers)
 
     # get the property id of the jounral page template and read the property tags
-    properties_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
-    properties = read_page_properties(templatePage_id, properties_id, headers)
+    tag_property_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
+    tags_property = read_page_properties(templatePage_id, tag_property_id, headers)
 
     # build properties tag payload for the new page
     newPage_tags = {
-        properties['type']: [
+        tags_property['type']: [
             {
                 'name': multi_select['name']
-            } for multi_select in properties[properties['type']]
+            } for multi_select in tags_property[tags_property['type']]
         ]
     }
 
     ##########################################
     # add more tags to the properties of a page
     ##########################################
-    if weekday == 1:  # tuesday
-        newPage_tags[properties['type']].append({'name': 'Groceries 🛒'})
+    tags_to_add = []
+
+    # if weekday == 1:  # tuesday
+    #     tags_to_add.append({'name': 'Groceries 🛒'})
+
+    # get calendar details and add more content to the body of the page
+    newBlocks, events_today_info = get_new_body_content_and_cal_events()
+
+    # check if certain events match page property tags
+    tags_to_add.extend(check_for_event_tags(events_today_info))
+
+    newPage_tags[tags_property['type']].extend(tags_to_add)
 
     # payload for new journal page based on template, current date and tags
     newPageData_journal = {
@@ -138,9 +148,6 @@ def generate_journal_entry():
         # "children": templateBlocks
     }
 
-    # add more content to the body of the page
-    newBlocks, events_today_info = get_new_body_content_and_cal_events()
-
     # add all the new blocks to the template
     for count, block in enumerate(newBlocks):
         # list.insert(index, elem)
@@ -154,9 +161,6 @@ def generate_journal_entry():
 
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
-
-    # check if certain events match page property tags
-    check_for_event_tags(newPage_id, events_today_info)
 
     ##########################################
     # END OF MAIN SCRIPT
@@ -287,6 +291,7 @@ def get_new_body_content_and_cal_events():
 
 
 def update_journal_page_tags(newPage_id, tags):
+    # Note: This replaces all tags on the page
     tag_object = {
         "Tags": {
             "type": "multi_select",
@@ -321,7 +326,7 @@ def update_journal_page_properties(newPage_id, new_properties_dict):
     return update_page(newPage_id, newPageData_journal)
 
 
-def check_for_event_tags(newPage_id, events_today_info):
+def check_for_event_tags(events_today_info):
     # TODO: get list of Journal tags from Notion
     # TODO: Loop through and check if any of the events today match the tags using regex
     # tag_short = re.search(r'([a-Z]+)', tag.lower())
@@ -334,5 +339,21 @@ def check_for_event_tags(newPage_id, events_today_info):
     for event in events_today_info:
         if 'fencing' in event['summary'].lower():
             tags.append('Fencing 🤺')
+        if 'grocery' in event['summary'].lower():
+            tags.append('Groceries 🛒')
+        if 'angèle' in event['summary'].lower():
+            tags.append('Angèle 💕')
+        if 'macfe' in event['summary'].lower():
+            tags.append('MACFE')
+        if 'wedding' in event['summary'].lower():
+            tags.append('Wedding')
+            tags.append('Photography 📷')
 
-    return update_journal_page_tags(newPage_id, tags)
+    return tags
+
+
+def get_all_journal_tags():
+    # get a list of all tags in the journal
+    data = read_database(database_id_journal, headers)
+    tag_options = data["properties"]["Tags"]["multi_select"]["options"]
+    return [tag_prop.get("name", "") for tag_prop in tag_options]
