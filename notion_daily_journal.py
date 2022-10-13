@@ -119,7 +119,7 @@ def generate_journal_entry():
     # check if certain events match page property tags
     tags_to_add.extend(check_for_event_tags(events_today_info))
 
-    newPage_tags[tags_property['type']].extend(tags_to_add)
+    newPage_tags[tags_property['type']].extend([{'name': tag} for tag in tags_to_add])
 
     # payload for new journal page based on template, current date and tags
     newPageData_journal = {
