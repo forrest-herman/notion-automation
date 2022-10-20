@@ -115,18 +115,30 @@ def get_books_list_data_from_html(html_str):
 
         # parse date_started
         td = tr.find_all('td', {'class': 'field date_started'})[0]
-        span = td.find_all('span', {'class': 'date_started_value'})[0]
-        date_started = span.text
-        book_dict['date_started'] = convert_date_to_isoformat(date_started)
+        span = td.find_all('span', {'class': 'date_started_value'})
+        dates_started = []
+        for date_html in span:
+            date_started = date_html.text
+            dates_started.append(convert_date_to_isoformat(date_started))
+        book_dict['date_started'] = max(dates_started)
+        # store number of dates started to confirm # of dates finished
+        reads = len(dates_started)
 
         # parse date_read
         td = tr.find_all('td', {'class': 'field date_read'})[0]
+        dates_finished = []
         try:
-            span = td.find_all('span', {'class': 'date_read_value'})[0]
-            date_read = span.text
+            span = td.find_all('span', {'class': 'date_read_value'})
+            for date_html in span:
+                date_read = date_html.text
+                dates_finished.append(convert_date_to_isoformat(date_read))
         except IndexError:
-            date_read = None  # not finished
-        book_dict['date_read'] = convert_date_to_isoformat(date_read)
+            dates_finished = []  # no date finished
+
+        if len(dates_finished) < reads:
+            book_dict['date_read'] = None  # not finished
+        else:
+            book_dict['date_read'] = max(dates_finished)
 
         book_list.append(book_dict)
 
