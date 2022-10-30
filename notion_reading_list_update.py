@@ -73,6 +73,9 @@ def update_reading_list(read_list, currently_reading_list):
                 # book needs to be added to the reads list
                 add_read_date(notion_book["id"], goodreads_book)
                 print('Added', goodreads_book['title'], 'to the reads list')
+            else:
+                # update book progress
+                update_read_date(read_page["id"], goodreads_book)
 
     # END OF SCRIPT
 
@@ -274,6 +277,9 @@ def add_read_date(notion_book_page_id, book_details):
                         "id": book_stats_2022_id
                     }
                 ]
+            },
+            "Progress": {
+                "number": int(book_details.get("progress", 100)) / 100
             }
         },
     }
@@ -294,7 +300,7 @@ def update_read_date(page_to_update_id, book_details):
             "Date finished": {
                 "date": {
                     "start": book_details['date_read']
-                }
+                } if book_details['date_read'] else None
             },
             # in case of date started change
             "Date": {
@@ -309,6 +315,9 @@ def update_read_date(page_to_update_id, book_details):
                         }
                     }
                 ]
+            },
+            "Progress": {
+                "number": int(book_details.get("progress", 100)) / 100
             }
         }
     }

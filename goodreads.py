@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from web_scraping import get_html_using_selenium
 
+URL_HOMEPAGE = 'https://www.goodreads.com/user/show/58061822-forrest-herman'
 URL_BOOKS_READ = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read'
 URL_CURRENTLY_READING = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=currently-reading'
 
@@ -26,6 +27,15 @@ def get_rating_from_text(rating_text):
     except KeyError:
         rating = None  # avoid issues if the book is unrated
     return rating
+
+
+def get_progress_from_home_page(url=URL_HOMEPAGE):
+    html_str = get_html_using_selenium(url)
+    soup = BeautifulSoup(html_str, 'lxml')
+    progress = soup.find(class_='graphContainer progressGraph').find(class_='graphBar').get('style')
+    progress = re.search(r'width: (\d+)%', progress).group(1)
+
+    return progress  # current progress percentage
 
 
 def get_books_list_data_from_html(html_str):
