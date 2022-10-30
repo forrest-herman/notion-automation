@@ -21,4 +21,4 @@ else:
 notion_reading_list_update.update_reading_list(books_read, currently_reading)
 
 # create a new journal page daily
-# generate_journal_entry()
+generate_journal_entry()
