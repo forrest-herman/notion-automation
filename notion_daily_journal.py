@@ -343,7 +343,7 @@ def check_for_event_tags(events_today_info):
             tags.append('Groceries 🛒')
         if 'angèle' in event['summary'].lower():
             tags.append('Angèle 💕')
-        if 'macfe' in event['summary'].lower():
+        if 'macfe' in event['summary'].lower() or 'formula' in event['summary'].lower():
             tags.append('MACFE')
         if 'wedding' in event['summary'].lower():
             tags.append('Wedding')
