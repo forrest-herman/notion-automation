@@ -4,11 +4,16 @@ from notion_daily_journal import generate_journal_entry
 from notion_api_methods import *
 import notion_reading_list_update
 import goodreads
-from utils import save_json_to_file
+from utils import save_json_to_file, read_json_from_file
 
 # Goodreads work here
 books_read, currently_reading = goodreads.get_read_and_reading()
-if len(currently_reading) == 1:
+if len(currently_reading) == 0:
+    prev_book_details = read_json_from_file('json/current_book.json')
+    if prev_book_details is not None:
+        prev_book_details['progress'] = 100
+        save_json_to_file(prev_book_details, 'json/current_book.json')
+elif len(currently_reading) == 1:
     # if there is a book currently being read
     progress = goodreads.get_progress_from_home_page()
     currently_reading[0]['progress'] = progress
@@ -20,5 +25,5 @@ else:
 
 notion_reading_list_update.update_reading_list(books_read, currently_reading)
 
-# create a new journal page daily
+# # create a new journal page daily
 generate_journal_entry()
