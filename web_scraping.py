@@ -54,6 +54,9 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--no-sandbox")
 
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
+
     options.add_argument("--headless")
     options.add_argument("--window-size=%s" % WINDOW_SIZE)
     options.add_argument('--log-level=1')
