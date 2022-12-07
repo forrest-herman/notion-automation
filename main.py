@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 import os
 
 from notion_daily_journal import generate_journal_entry
@@ -9,7 +10,10 @@ from utils import save_json_to_file, read_json_from_file
 # Goodreads work here
 books_read, currently_reading = goodreads.get_read_and_reading()
 if len(currently_reading) == 0:
-    prev_book_details = read_json_from_file('json/current_book.json')
+    try:
+        prev_book_details = read_json_from_file('json/current_book.json')
+    except JSONDecodeError:
+        prev_book_details = None
     if prev_book_details is not None:
         prev_book_details['progress'] = 100
         save_json_to_file(prev_book_details, 'json/current_book.json')
