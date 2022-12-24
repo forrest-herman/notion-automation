@@ -2,7 +2,7 @@ async-generator==1.10
 attrs==21.4.0
 beautifulsoup4==4.11.1
 cachetools==5.2.0
-certifi==2022.6.15
+certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.0
 cloudinary==1.29.0
@@ -17,9 +17,9 @@ h11==0.13.0
 httplib2==0.20.4
 idna==3.3
 lxml==4.9.1
-# oauthlib==3.2.1
+oauthlib==3.2.0
 outcome==1.2.0
-# protobuf==4.21.6
+protobuf==4.21.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
