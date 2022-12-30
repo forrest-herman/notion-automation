@@ -17,9 +17,9 @@ h11==0.13.0
 httplib2==0.20.4
 idna==3.3
 lxml==4.9.1
-oauthlib==3.2.0
+oauthlib==3.2.2
 outcome==1.2.0
-protobuf==4.21.2
+protobuf==4.21.12
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
