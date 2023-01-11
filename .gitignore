@@ -8,3 +8,4 @@ json/
 .flake8
 .DS_Store
 notion-launchd
+user_data/*

@@ -44,7 +44,7 @@ weekday = datetime.date.today().weekday()
 def build_template_query_payload():
     # get the correct template based on weekday or weekend
     if weekday < 5:  # monday - friday
-        pageName = "Daily Summary Template"
+        pageName = "Daily Summary OtO Template"
         # pageName = "Daily Summary Preteckt Template"
     else:
         pageName = "Daily Summary Template"
