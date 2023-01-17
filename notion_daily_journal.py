@@ -349,6 +349,8 @@ def check_for_event_tags(events_today_info):
         if 'wedding' in event['summary'].lower():
             tags.append('Wedding')
             tags.append('Photography 📷')
+        if 'therapy' in event['summary'].lower():
+            tags.append('Therapy ☯')
 
     return tags
 

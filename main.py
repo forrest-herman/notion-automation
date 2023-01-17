@@ -7,6 +7,9 @@ import notion_reading_list_update
 import goodreads
 from utils import save_json_to_file, read_json_from_file
 
+# create a new journal page daily
+generate_journal_entry()
+
 # Goodreads work here
 books_read, currently_reading = goodreads.get_read_and_reading()
 if len(currently_reading) == 0:
@@ -29,6 +32,3 @@ else:
     print("Too many books currently being read")
 
 notion_reading_list_update.update_reading_list(books_read, currently_reading)
-
-# # create a new journal page daily
-generate_journal_entry()
