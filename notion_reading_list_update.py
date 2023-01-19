@@ -10,6 +10,7 @@ reads_database_id = '68d90801b2cd40e0a6a7a59616d073da'
 all_book_stats_id = '74b48b15ed1d468bb07e20adc555d01c'
 # TODO: use database lookup to find the id for the correct year
 book_stats_2022_id = '096a5fbdc1b64f3dbc0681b083d0349f'
+book_stats_2023_id = '9ef1139db1c54da29e3eeabdc878c214'
 
 
 def update_reading_list(read_list, currently_reading_list):
@@ -274,7 +275,7 @@ def add_read_date(notion_book_page_id, book_details):
                         "id": all_book_stats_id
                     },
                     {
-                        "id": book_stats_2022_id
+                        "id": book_stats_2023_id
                     }
                 ]
             },
