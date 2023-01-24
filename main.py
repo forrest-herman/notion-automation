@@ -9,6 +9,7 @@ from utils import save_json_to_file, read_json_from_file
 
 # create a new journal page daily
 generate_journal_entry()
+print("Journal entry created")
 
 # Goodreads work here
 books_read, currently_reading = goodreads.get_read_and_reading()
