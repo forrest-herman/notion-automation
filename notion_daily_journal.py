@@ -76,7 +76,7 @@ def build_template_query_payload():
         print("Journal page already exists")
         # today = datetime.date.today() + datetime.timedelta(days=1)
         # today = today.isoformat()
-        exit()
+        return None
 
     return template_query_payload
 
@@ -87,6 +87,8 @@ def generate_journal_entry():
     """Main script to create daily journal entry."""
 
     template_query_payload = build_template_query_payload()
+    if template_query_payload is None:
+        return None
 
     # get the template page id and read it's blocks
     templatePage_id = query_database_pages(
@@ -163,6 +165,7 @@ def generate_journal_entry():
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
 
+    return None
     ##########################################
     # END OF MAIN SCRIPT
     ##########################################
