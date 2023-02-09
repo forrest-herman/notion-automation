@@ -163,21 +163,43 @@ def get_book_details_from_url(book_url):
     # parse the html string for the book details
     soup = BeautifulSoup(html_str, 'lxml')
 
+    ## old goodreads page structure ##
+    """ 
     publication_html = soup.find_all(
         'div',
         {'id': 'details'}
     )[0].find_all('div', {'class': 'row'})[1]
-    publication_date = re.search(r'Published\s+(.*)\s+', publication_html.text.strip()).group(1)
+    publication_date = re.search(r'Published\s+(.*)\s+', publication_html.text.strip()).group(1) 
+
+
+    numberOfPages_html = soup.find_all('span', {'itemprop': 'numberOfPages'})[0]
+    page_count = re.search(r'\d+', numberOfPages_html.text).group()
+    page_count = int(page_count)
 
     genres_list_html = soup.find_all('a', {'class': 'actionLinkLite bookPageGenreLink'})
     genres = [genre.text for genre in genres_list_html]
     genres = set(genres)  # use set to remove duplicates
     if "Audiobook" in genres:
         genres.remove("Audiobook")
+    """
 
-    numberOfPages_html = soup.find_all('span', {'itemprop': 'numberOfPages'})[0]
+    # new goodreads page structure
+
+    featured_details = soup.find_all('div', {'class': 'FeaturedDetails'})[0].find_all('p') # contains pub date and number of pages
+
+    numberOfPages_html = featured_details[0]
     page_count = re.search(r'\d+', numberOfPages_html.text).group()
     page_count = int(page_count)
+
+    publication_html = featured_details[1]
+    publication_date = re.search(r'published\s+(.*)', publication_html.text.strip()).group(1)
+
+    genres_list_html = soup.select("span.BookPageMetadataSection__genreButton > a > span.Button__labelItem")
+    # TODO: stimulate a click on the "show more" button to get all genres
+    genres = [genre.text for genre in genres_list_html]
+    genres = set(genres)  # use set to remove duplicates
+    if "Audiobook" in genres:
+        genres.remove("Audiobook")
 
     book_details = {
         'publication_date': publication_date,
