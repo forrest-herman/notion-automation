@@ -58,7 +58,7 @@ def build_driver(link=None, chrome_driver=CHROME_DRIVER_PATH):
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
 
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--window-size=%s" % WINDOW_SIZE)
     options.add_argument('--log-level=1')
     driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
