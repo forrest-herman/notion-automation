@@ -165,7 +165,7 @@ def generate_journal_entry():
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
 
-    return None
+    return True
     ##########################################
     # END OF MAIN SCRIPT
     ##########################################
