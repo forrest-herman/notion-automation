@@ -5,7 +5,9 @@ from utils import save_json_to_file
 from bs4 import BeautifulSoup
 # BeautifulSoup is a python library to scrap data from web pages.
 
-from web_scraping import get_html_using_selenium
+from selenium.webdriver.common.by import By
+
+from web_scraping import get_html_using_selenium, build_driver
 
 URL_HOMEPAGE = 'https://www.goodreads.com/user/show/58061822-forrest-herman'
 URL_BOOKS_READ = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read'
@@ -157,8 +159,17 @@ def get_books_list_data_from_html(html_str):
 
 def get_book_details_from_url(book_url):
     """Get the book details from the url provided."""
-    # scrape the url for the html
-    html_str = get_html_using_selenium(book_url)
+
+    driver = build_driver(book_url)
+
+    # click the show more genres button
+    show_more_genres_button = driver.find_element(
+        By.CSS_SELECTOR,
+        "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+    )
+    show_more_genres_button.click()
+
+    html_str = get_html_using_selenium(driver=driver)
 
     # parse the html string for the book details
     soup = BeautifulSoup(html_str, 'lxml')
@@ -194,8 +205,8 @@ def get_book_details_from_url(book_url):
     publication_html = featured_details[1]
     publication_date = re.search(r'published\s+(.*)', publication_html.text.strip()).group(1)
 
-    genres_list_html = soup.select("span.BookPageMetadataSection__genreButton > a > span.Button__labelItem")
-    # TODO: stimulate a click on the "show more" button to get all genres
+    genres_list_html = soup.select(
+        "span.BookPageMetadataSection__genreButton > a > span.Button__labelItem")
     genres = [genre.text for genre in genres_list_html]
     genres = set(genres)  # use set to remove duplicates
     if "Audiobook" in genres:

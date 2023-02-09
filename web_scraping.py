@@ -1,5 +1,6 @@
 import os
 from selenium import webdriver
+# from selenium.webdriver.common.by import By
 from utils import write_to_file
 
 # load environment variables
@@ -44,7 +45,7 @@ def get_chrome_driver_exact_location():
 CHROME_DRIVER_PATH = get_chrome_driver_exact_location()
 
 
-def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
+def build_driver(link=None, chrome_driver=CHROME_DRIVER_PATH):
     options = webdriver.ChromeOptions()
 
     # for heroku use this:
@@ -57,12 +58,22 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
 
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--window-size=%s" % WINDOW_SIZE)
     options.add_argument('--log-level=1')
     driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
 
-    driver.get(url)
+    if link:
+        driver.get(link)
+    return driver
+
+
+def get_html_using_selenium(url=None, driver=None):
+    if driver is None:
+        driver = build_driver()
+
+    if url:
+        driver.get(url)
 
     # handle infinite scroll
     # lenOfPage = driver.execute_script(
@@ -78,8 +89,9 @@ def get_html_using_selenium(url, chrome_driver=CHROME_DRIVER_PATH):
 
     # Page is fully scrolled now. Next step is to extract the source code from it.
     my_html = driver.page_source
-    driver.quit()
 
     # write_to_file(my_html, './json/goodreads_html_2.html')
+
+    driver.quit()
 
     return my_html

@@ -9,3 +9,4 @@ json/
 .DS_Store
 notion-launchd
 user_data/*
+testing.py
