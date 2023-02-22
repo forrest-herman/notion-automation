@@ -1,8 +1,7 @@
 from json import JSONDecodeError
-import os
 
 from notion_daily_journal import generate_journal_entry
-from notion_api_methods import *
+from track_games_methods import update_games_list
 import notion_reading_list_update
 import goodreads
 from utils import save_json_to_file, read_json_from_file
@@ -33,3 +32,5 @@ else:
     print("Too many books currently being read")
 
 notion_reading_list_update.update_reading_list(books_read, currently_reading)
+
+update_games_list()
