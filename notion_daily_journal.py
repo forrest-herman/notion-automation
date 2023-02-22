@@ -2,6 +2,7 @@ import datetime
 import os
 
 from notion_api_methods import *
+from notion_insurance_tracker import add_new_appointment
 import utils
 
 # import cloudinary
@@ -354,6 +355,8 @@ def check_for_event_tags(events_today_info):
             tags.append('Photography 📷')
         if 'therapy' in event['summary'].lower():
             tags.append('Therapy ☯')
+            # add to insurance coverage tracker
+            add_new_appointment('Therapy', 135)
 
     return tags
 
