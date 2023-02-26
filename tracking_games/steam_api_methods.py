@@ -41,16 +41,16 @@ def get_owned_games(player_id, appids_filter=None):
             "appids_filter": appids_filter,
         }
         input_json = json.dumps(input_json)
-        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&input_json={input_json}'
+        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&input_json={input_json}&include_appinfo=true'
     else:
-        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&steamid={player_id}'
+        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&steamid={player_id}&include_appinfo=true'
 
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code)
 
     data = result.json()
-    return data
+    return data.get('response', {})
 
 
 def get_user_stats_for_game(player_id, appid):
