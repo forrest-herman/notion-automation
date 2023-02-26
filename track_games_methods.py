@@ -71,7 +71,6 @@ def update_games_list():
     recent_games = get_recently_played_games(STEAM_ID).get('games', [])
 
     for game in recent_games:
-        print("Working on", game['name'])
         # process the game data from the api query
         extra_game_info = get_owned_games(STEAM_ID, [game['appid']])['games'][0]
 
@@ -221,7 +220,7 @@ def update_games_list():
 
     if datetime.date.today().weekday() == 6:  # is Sunday
         # do this once a week
-        print("----------------\nWeekly Game Update...\n----------------")
+        print("--------------------\nWeekly Game Update...\n--------------------")
         all_steam_games = get_owned_games(STEAM_ID)['games']
 
         for game in all_steam_games:
@@ -318,6 +317,9 @@ def update_games_list():
                         }
                     }
                 }
+                prev_status = game_page['properties']['Status']['status']['name']
+                if prev_status == "Completed":
+                    pageData['properties']['Status']['status']['name'] = "Completed"
 
                 # check if cover img is there
                 if game_page['cover'] == None or game_page['icon'] == None:
