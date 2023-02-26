@@ -1,5 +1,7 @@
+import json
 import requests
 import os
+import urllib.parse
 # load environment variables
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,13 +29,21 @@ def get_player_summaries(player_id):
     return data
 
 
-def get_owned_games(player_id):
+def get_owned_games(player_id, appids_filter=None):
     interface = 'IPlayerService'
     method = 'GetOwnedGames'
     version = 'v0001'
     format = 'json'
 
-    url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&steamid={player_id}'
+    if appids_filter:
+        input_json = {
+            "steamid": player_id,
+            "appids_filter": appids_filter,
+        }
+        input_json = json.dumps(input_json)
+        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&input_json={input_json}'
+    else:
+        url = f'{base_url}/{interface}/{method}/{version}/?key={API_KEY}&format={format}&steamid={player_id}'
 
     result = requests.get(url)
     if (result.status_code != 200):
@@ -117,7 +127,9 @@ def get_user_achievements_for_game(player_id, appid):
     return data
 
 
-def get_game_img_url(appid, hash):
+def get_game_img_url(appid, hash=None):
+    if hash is None:
+        return f'https://cdn.akamai.steamstatic.com/steam/apps/{appid}/header.jpg'
     return f'http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg'
 
 

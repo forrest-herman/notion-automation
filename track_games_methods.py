@@ -14,33 +14,57 @@ def format_playtime_hrs(playtime_mins):
 
 
 def get_achievement_percentage(achievements):
+    if achievements is None:
+        return None
     total = len(achievements)
+    # sum all true achievements
     count = sum(a['achieved'] == 1 for a in achievements)
-    # for achievement in achievements:
-    #     if achievement['achieved'] == 1:
-    #         count += 1
     return round((count / total) * 100, 1)
 
 
 # main function
 def update_games_list():
     recent_games = get_recently_played_games(STEAM_ID).get('games', [])
-    print(recent_games)
-
-    today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
-    two_weeks_ago = today - datetime.timedelta(days=14)
 
     for game in recent_games:
+        print("Working on", game['name'])
+        # process the game data from the api query
+        extra_game_info = get_owned_games(STEAM_ID, [game['appid']])
+        # TODO: for the future, track games that aren't recently played
+        # but probably only do it once a week
+        timestamp = extra_game_info['response']['games'][0]['rtime_last_played']
+
+        last_played = datetime.datetime.fromtimestamp(timestamp)
+        start_play = last_played - datetime.timedelta(minutes=game['playtime_forever'])
 
         # find the game in notion if it already exists
         query_game_page_payload = {
             "page_size": 1,
             "filter": {
-                "property": "Title",
-                "title": {
-                    "equals": game['name']
-                }
+                "and": [
+                    {
+                        "property": "Game Store",
+                        "select": {
+                            "equals": "Steam"
+                        }
+                    },
+                    {
+                        "or": [
+                            {
+                                "property": "Title",
+                                "title": {
+                                    "equals": game['name']
+                                }
+                            },
+                            {
+                                "property": "appid",
+                                "rich_text": {
+                                    "equals": str(game['appid'])
+                                }
+                            }
+                        ]
+                    }
+                ]
             }
         }
 
@@ -76,7 +100,7 @@ def update_games_list():
                     },
                     "Dates Played": {
                         "date": {
-                            "start": yesterday.isoformat(),
+                            "start": start_play.date().isoformat(),
                         }
                     },
                     "Game Store": {
@@ -110,12 +134,13 @@ def update_games_list():
             }
 
             print("Create new page for game:", game['name'])
-            newPage_id = create_page(new_game_pageData)["id"]
+            create_page(new_game_pageData)["id"]
 
         else:
+            game_props = game_page.get('properties')  # notion game page properties
+
             # check if playtime_forever is greater than 'hours played' column
-            # TODO
-            prev_hours = game_page.get('properties')['Hours Played']['number']
+            prev_hours = game_props['Hours Played']['number']
             if prev_hours == format_playtime_hrs(game['playtime_forever']):
                 print("No change in playtime for", game['name'])
                 continue
@@ -123,36 +148,70 @@ def update_games_list():
             achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
             achievements = achievements['playerstats'].get('achievements', None)
 
-            # update last played to 2 weeks ago, unless there is no date started...
-            # or that date is less than the start date
-
-            newPageData = {
+            pageData = {
                 "properties": {
+                    "Title": {
+                        "title": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": game['name']
+                                }
+                            }
+                        ]
+                    },
                     "Dates Played": {
                         "date": {
-                            "start": game_page.get('properties')['Dates Played']['date']['start'],
-                            "end": yesterday.isoformat()
+                            "start": game_props['Dates Played']['date']['start'],
+                            "end": last_played.date().isoformat() if game_props['Status']['status']['name'] == "Completed" else None,
+                        }
+                    },
+                    "Last Played": {
+                        "date": {
+                            "start": last_played.isoformat(),
+                            "time_zone": "America/New_York"
                         }
                     },
                     "Hours Played": {
                         "number": format_playtime_hrs(game['playtime_forever'])
                     },
-                    "Status": {
-                        "type": "status",
-                        "status": {
-                            "name": "In progress"
-                        }
-                    },
                     "Progress": {
                         "type": "number",
-                        "number": get_achievement_percentage(achievements) if achievements is not None else None
+                        "number": get_achievement_percentage(achievements)
+                    },
+                    "appid": {
+                        "type": "rich_text",
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": str(game['appid'])
+                                }
+                            }
+                        ]
                     }
                 }
             }
 
-            update_page(game_page["id"], newPageData)
+            # check if cover img is there
+            if game_page['cover'] == None or game_page['icon'] == None:
+                pageData['icon'] = {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
+                    }
+                }
+                pageData['cover'] = {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'])
+                    }
+                }
 
-    # TODO: any games not updated should be set to 'Taking a break'
+            update_page(game_page["id"], pageData)
+
+    # TODO: any Steam games not updated should be set to 'Taking a break'
+    # do this once a week
 
     return True
     # The End #
@@ -172,5 +231,14 @@ def update_games_list():
 #     if achievements is not None:
 #         percent = get_achievement_percentage(achievements)
 #         print(id, percent, "%")
-    # get_user_stats_for_game(STEAM_ID, id)
-    # break
+# get_user_stats_for_game(STEAM_ID, id)
+# break
+
+
+# recent_games = get_recently_played_games(STEAM_ID).get('games', [])
+# print(recent_games)
+# id = recent_games[0]['appid']
+# test = get_owned_games(STEAM_ID, [id])
+# timestamp = test['response']['games'][0]['rtime_last_played']
+# test = datetime.datetime.fromtimestamp(timestamp)
+# print(test)
