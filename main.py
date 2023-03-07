@@ -37,6 +37,7 @@ def main():
     update_games_list()
 
     # TODO: add commuting fares
+    # TODO: add subscription payments
 
 
 if __name__ == '__main__':
