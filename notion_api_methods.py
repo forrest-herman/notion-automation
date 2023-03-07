@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+if TOKEN is None:
+    raise Exception("Notion token not found in .env file.")
 
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database

@@ -8,6 +8,8 @@ load_dotenv()
 
 API_KEY = os.getenv('STEAM_API_KEY')  # steam credentials
 STEAM_ID = os.getenv('STEAM_ID')
+if STEAM_ID is None or API_KEY is None:
+    raise Exception("Steam ID or API key not found in .env file.")
 
 # see instructions here
 # https://developer.valvesoftware.com/wiki/Steam_Web_API
