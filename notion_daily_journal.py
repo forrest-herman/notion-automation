@@ -357,6 +357,8 @@ def check_for_event_tags(events_today_info):
             tags.append('Therapy ☯')
             # add to insurance coverage tracker
             add_new_appointment('Therapy', 135)
+        if '1-on-1' in event['summary'].lower():
+            tags.append('1-on-1')
 
     return tags
 
