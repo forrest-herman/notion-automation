@@ -10,6 +10,8 @@ database_id_games = 'ab34a11b1156466bb028ced90af23f96'
 
 
 def format_playtime_hrs(playtime_mins):
+    if playtime_mins == 0:
+        return None
     return round(playtime_mins / 60, 1)
 
 
@@ -221,126 +223,134 @@ def update_games_list():
     if datetime.date.today().weekday() == 6:  # is Sunday
         # do this once a week
         print("--------------------\nWeekly Game Update...\n--------------------")
-        all_steam_games = get_owned_games(STEAM_ID)['games']
-
-        for game in all_steam_games:
-            # check if the game is on the recent games list
-            if game['appid'] in [g['appid'] for g in recent_games]:
-                continue
-
-            last_played = get_last_played(game)
-
-            game_page = lookup_game_in_notion(game)
-            if game_page is None:
-                # create a new page for the game
-                # TODO: reduce the redundancy here
-                pageData = {
-                    "parent": {"database_id": database_id_games},
-                    "icon": {
-                        "type": "external",
-                        "external": {
-                            "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                        }
-                    },
-                    "cover": {
-                        "type": "external",
-                        "external": {
-                            "url": get_game_img_url(game['appid'])
-                        }
-                    },
-                    "properties": {
-                        "Title": {
-                            "title": [
-                                {
-                                    "type": "text",
-                                    "text": {
-                                        "content": game['name']
-                                    }
-                                }
-                            ]
-                        },
-                        "Game Store": {
-                            "type": "select",
-                            "select": {
-                                "name": "Steam"
-                            }
-                        },
-                        "Status": {
-                            "type": "status",
-                            "status": {
-                                "name": "Never Played"
-                            }
-                        },
-                        "appid": {
-                            "type": "rich_text",
-                            "rich_text": [
-                                {
-                                    "type": "text",
-                                    "text": {
-                                        "content": str(game['appid'])
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-                print("Create new page for game:", game['name'])
-                create_page(pageData)
-            else:
-                # update the game page
-
-                # TODO: reduce the redundancy here
-                pageData = {
-                    "properties": {
-                        "Status": {
-                            "type": "status",
-                            "status": {
-                                "name": "Taking a break" if last_played else "Never Played"
-                            }
-                        },
-                        "Last Played": {
-                            "date": {
-                                "start": last_played.isoformat(),
-                                "time_zone": "America/New_York"
-                            } if last_played else None
-                        },
-                        "appid": {
-                            "type": "rich_text",
-                            "rich_text": [
-                                {
-                                    "type": "text",
-                                    "text": {
-                                        "content": str(game['appid'])
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-                prev_status = game_page['properties']['Status']['status']['name']
-                if prev_status == "Completed":
-                    pageData['properties']['Status']['status']['name'] = "Completed"
-
-                # check if cover img is there
-                if game_page['cover'] == None or game_page['icon'] == None:
-                    pageData['icon'] = {
-                        "type": "external",
-                        "external": {
-                            "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                        }
-                    }
-                    pageData['cover'] = {
-                        "type": "external",
-                        "external": {
-                            "url": get_game_img_url(game['appid'])
-                        }
-                    }
-
-                update_page(game_page["id"], pageData)
-                print("Updated page for game:", game['name'])
+        update_all_games(recent_games)
 
     return True
     # The End #
+
+
+def update_all_games(recent_games=[]):
+    all_steam_games = get_owned_games(STEAM_ID)['games']
+
+    for game in all_steam_games:
+        # check if the game is on the recent games list
+        if game['appid'] in [g['appid'] for g in recent_games]:
+            continue
+
+        last_played = get_last_played(game)
+
+        game_page = lookup_game_in_notion(game)
+        if game_page is None:
+            # create a new page for the game
+            # TODO: reduce the redundancy here
+            pageData = {
+                "parent": {"database_id": database_id_games},
+                "icon": {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
+                    }
+                },
+                "cover": {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'])
+                    }
+                },
+                "properties": {
+                    "Title": {
+                        "title": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": game['name']
+                                }
+                            }
+                        ]
+                    },
+                    "Game Store": {
+                        "type": "select",
+                        "select": {
+                            "name": "Steam"
+                        }
+                    },
+                    "Status": {
+                        "type": "status",
+                        "status": {
+                            "name": "Never Played"
+                        }
+                    },
+                    "appid": {
+                        "type": "rich_text",
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": str(game['appid'])
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+            print("Create new page for game:", game['name'])
+            create_page(pageData)
+        else:
+            # update the game page
+
+            # TODO: reduce the redundancy here
+            pageData = {
+                "properties": {
+                    "Status": {
+                        "type": "status",
+                        "status": {
+                            "name": "Taking a break" if last_played else "Never Played"
+                        }
+                    },
+                    "Last Played": {
+                        "date": {
+                            "start": last_played.isoformat(),
+                            "time_zone": "America/New_York"
+                        } if last_played else None
+                    },
+                    "Hours Played": {
+                        "type": "number",
+                        "number": format_playtime_hrs(game['playtime_forever'])
+                    },
+                    "appid": {
+                        "type": "rich_text",
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": str(game['appid'])
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+            prev_status = game_page['properties']['Status']['status']['name']
+            if prev_status == "Completed":
+                pageData['properties']['Status']['status']['name'] = "Completed"
+
+            # check if cover img is there
+            if game_page['cover'] == None or game_page['icon'] == None:
+                pageData['icon'] = {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
+                    }
+                }
+                pageData['cover'] = {
+                    "type": "external",
+                    "external": {
+                        "url": get_game_img_url(game['appid'])
+                    }
+                }
+
+            update_page(game_page["id"], pageData)
+            print("Updated page for game:", game['name'])
 
 
 def create_notion_game_page(steam_game, props={}):
@@ -423,3 +433,11 @@ def create_notion_game_page(steam_game, props={}):
 # timestamp = test['response']['games'][0]['rtime_last_played']
 # test = datetime.datetime.fromtimestamp(timestamp)
 # print(test)
+
+def main():
+    update_games_list()
+    update_all_games()
+
+
+if __name__ == '__main__':
+    main()
