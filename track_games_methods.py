@@ -16,7 +16,7 @@ def format_playtime_hrs(playtime_mins):
 
 
 def get_last_played(game):
-    timestamp = game['rtime_last_played']
+    timestamp = game.get('rtime_last_played', 0)
     if timestamp == 0:
         return None
     last_played = datetime.datetime.fromtimestamp(timestamp)
@@ -75,6 +75,7 @@ def update_games_list():
     for game in recent_games:
         # process the game data from the api query
         extra_game_info = get_owned_games(STEAM_ID, [game['appid']])['games'][0]
+        game = game | extra_game_info  # merge the two dictionaries
 
         last_played = get_last_played(extra_game_info)
         start_play = last_played - datetime.timedelta(minutes=game['playtime_forever'])
@@ -83,69 +84,7 @@ def update_games_list():
 
         if game_page is None:
             # game page doesn't exist, create it
-            new_game_pageData = {
-                "parent": {"database_id": database_id_games},
-                "icon": {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                    }
-                },
-                "cover": {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'])
-                    }
-                },
-                "properties": {
-                    "Title": {
-                        "title": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": game['name']
-                                }
-                            }
-                        ]
-                    },
-                    "Dates Played": {
-                        "date": {
-                            "start": start_play.date().isoformat(),
-                        }
-                    },
-                    "Game Store": {
-                        "type": "select",
-                        "select": {
-                            "name": "Steam"
-                        }
-                    },
-                    "Hours Played": {
-                        "type": "number",
-                        "number": format_playtime_hrs(game['playtime_forever'])
-                    },
-                    "Status": {
-                        "type": "status",
-                        "status": {
-                            "name": "In progress"
-                        }
-                    },
-                    "appid": {
-                        "type": "rich_text",
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": str(game['appid'])
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-
-            print("Create new page for game:", game['name'])
-            create_page(new_game_pageData)["id"]
-
+            create_notion_game_page(game, last_played, start_play)
         else:
             game_props = game_page.get('properties')  # notion game page properties
 
@@ -158,67 +97,7 @@ def update_games_list():
             achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
             achievements = achievements['playerstats'].get('achievements', None)
 
-            pageData = {
-                "properties": {
-                    "Title": {
-                        "title": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": game['name']
-                                }
-                            }
-                        ]
-                    },
-                    "Dates Played": {
-                        "date": {
-                            "start": game_props['Dates Played']['date']['start'],
-                            "end": last_played.date().isoformat() if game_props['Status']['status']['name'] == "Completed" else None,
-                        }
-                    },
-                    "Last Played": {
-                        "date": {
-                            "start": last_played.isoformat(),
-                            "time_zone": "America/New_York"
-                        } if last_played else None
-                    },
-                    "Hours Played": {
-                        "number": format_playtime_hrs(game['playtime_forever'])
-                    },
-                    "Progress": {
-                        "type": "number",
-                        "number": get_achievement_percentage(achievements)
-                    },
-                    "appid": {
-                        "type": "rich_text",
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": str(game['appid'])
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-
-            # check if cover img is there
-            if game_page['cover'] == None or game_page['icon'] == None:
-                pageData['icon'] = {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                    }
-                }
-                pageData['cover'] = {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'])
-                    }
-                }
-
-            update_page(game_page["id"], pageData)
+            update_notion_game_page(game, game_page, achievements)
 
     if datetime.date.today().weekday() == 6:  # is Sunday
         # do this once a week
@@ -237,136 +116,100 @@ def update_all_games(recent_games=[]):
         if game['appid'] in [g['appid'] for g in recent_games]:
             continue
 
-        last_played = get_last_played(game)
-
         game_page = lookup_game_in_notion(game)
         if game_page is None:
             # create a new page for the game
-            # TODO: reduce the redundancy here
-            pageData = {
-                "parent": {"database_id": database_id_games},
-                "icon": {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                    }
-                },
-                "cover": {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'])
-                    }
-                },
-                "properties": {
-                    "Title": {
-                        "title": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": game['name']
-                                }
-                            }
-                        ]
-                    },
-                    "Game Store": {
-                        "type": "select",
-                        "select": {
-                            "name": "Steam"
-                        }
-                    },
-                    "Status": {
-                        "type": "status",
-                        "status": {
-                            "name": "Never Played"
-                        }
-                    },
-                    "appid": {
-                        "type": "rich_text",
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": str(game['appid'])
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-            print("Create new page for game:", game['name'])
-            create_page(pageData)
+            create_notion_game_page(game)
         else:
             # update the game page
+            update_notion_game_page(game, game_page)
 
-            # TODO: reduce the redundancy here
-            pageData = {
-                "properties": {
-                    "Status": {
-                        "type": "status",
-                        "status": {
-                            "name": "Taking a break" if last_played else "Never Played"
+
+def update_notion_game_page(game, prev_page_data, achievements=None):
+    last_played = get_last_played(game)
+
+    pageData = {
+        "properties": {
+            "Title": {
+                "title": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": game['name']
                         }
-                    },
-                    "Last Played": {
-                        "date": {
-                            "start": last_played.isoformat(),
-                            "time_zone": "America/New_York"
-                        } if last_played else None
-                    },
-                    "Hours Played": {
-                        "type": "number",
-                        "number": format_playtime_hrs(game['playtime_forever'])
-                    },
-                    "appid": {
-                        "type": "rich_text",
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": str(game['appid'])
-                                }
-                            }
-                        ]
                     }
+                ]
+            },
+            "Status": {
+                "type": "status",
+                "status": {
+                    "name": "Taking a break" if last_played else "Never Played"
                 }
+            },
+            "Last Played": {
+                "date": {
+                    "start": last_played.isoformat(),
+                    "time_zone": "America/New_York"
+                } if last_played else None
+            },
+            "Hours Played": {
+                "type": "number",
+                "number": format_playtime_hrs(game['playtime_forever'])
+            },
+            "Progress": {
+                "type": "number",
+                "number": get_achievement_percentage(achievements) if achievements else None
+            },
+            "appid": {
+                "type": "rich_text",
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": str(game['appid'])
+                        }
+                    }
+                ]
             }
-            prev_status = game_page['properties']['Status']['status']['name']
-            if prev_status == "Completed":
-                pageData['properties']['Status']['status']['name'] = "Completed"
+        }
+    }
+    prev_status = prev_page_data['properties']['Status']['status']['name']
+    if prev_status == "Completed":
+        pageData['properties']['Status']['status']['name'] = "Completed"
 
-            # check if cover img is there
-            if game_page['cover'] == None or game_page['icon'] == None:
-                pageData['icon'] = {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'], game['img_icon_url'])
-                    }
-                }
-                pageData['cover'] = {
-                    "type": "external",
-                    "external": {
-                        "url": get_game_img_url(game['appid'])
-                    }
-                }
+    # check if cover img is there
+    if prev_page_data['cover'] == None or prev_page_data['icon'] == None:
+        pageData['icon'] = {
+            "type": "external",
+            "external": {
+                "url": get_game_img_url(game['appid'], game['img_icon_url'])
+            }
+        }
+        pageData['cover'] = {
+            "type": "external",
+            "external": {
+                "url": get_game_img_url(game['appid'])
+            }
+        }
 
-            update_page(game_page["id"], pageData)
-            print("Updated page for game:", game['name'])
+    update_page(prev_page_data["id"], pageData)
+    print("Updated page for game:", game['name'])
 
 
-def create_notion_game_page(steam_game, props={}):
+def create_notion_game_page(game, last_played=None, start_play=None):
     # WORKS FOR STEAM GAMES
     pageData = {
         "parent": {"database_id": database_id_games},
         "icon": {
             "type": "external",
             "external": {
-                "url": get_game_img_url(steam_game['appid'], steam_game['img_icon_url'])
+                "url": get_game_img_url(game['appid'], game['img_icon_url'])
             }
         },
         "cover": {
             "type": "external",
             "external": {
-                "url": get_game_img_url(steam_game['appid'])
+                "url": get_game_img_url(game['appid'])
             }
         },
         "properties": {
@@ -375,7 +218,7 @@ def create_notion_game_page(steam_game, props={}):
                     {
                         "type": "text",
                         "text": {
-                            "content": steam_game['name']
+                            "content": game['name']
                         }
                     }
                 ]
@@ -386,10 +229,25 @@ def create_notion_game_page(steam_game, props={}):
                     "name": "Steam"
                 }
             },
+            "Last Played": {
+                "date": {
+                    "start": last_played.isoformat(),
+                    "time_zone": "America/New_York"
+                } if last_played else None
+            },
+            "Dates Played": {
+                "date": {
+                    "start": start_play.date().isoformat(),
+                } if start_play else None
+            },
+            "Hours Played": {
+                "type": "number",
+                "number": format_playtime_hrs(game['playtime_forever']) if last_played else None
+            },
             "Status": {
                 "type": "status",
                 "status": {
-                    "name": "Never Played"
+                    "name": "In progress" if last_played else "Never Played"
                 }
             },
             "appid": {
@@ -398,14 +256,21 @@ def create_notion_game_page(steam_game, props={}):
                     {
                         "type": "text",
                         "text": {
-                            "content": str(steam_game['appid'])
+                            "content": str(game['appid'])
                         }
                     }
                 ]
             }
         }
     }
-    print("Create new page for game:", steam_game['name'])
+
+    # if last_played is None:
+    #     props = ['Dates Played', 'Last Played', 'Hours Played']
+    #     for prop in props:
+    #         pageData.pop(prop, None)
+    #     pageData['properties']['Status']['status']['name'] = "Never Played"
+
+    print("Create new page for game:", game['name'])
     create_page(pageData)
 
 # update_games_list()
