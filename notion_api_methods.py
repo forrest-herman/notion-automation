@@ -27,6 +27,7 @@ def read_database(database_id, headers=HEADERS):
     result = requests.get(url, headers=headers)
     if (result.status_code != 200):
         print(result.status_code)
+        print("read_database:", result.text)
 
     data = result.json()
 
@@ -59,6 +60,7 @@ def read_page_properties(page_id, property_id, headers=HEADERS):
     res = requests.get(url, headers=headers)
     if (res.status_code != 200):
         print(res.status_code)
+        print("read_page_properties", res.text)
 
     data = res.json()
 
@@ -74,6 +76,7 @@ def read_block_children(block_id, headers=HEADERS):
     res = requests.get(url, headers=headers)
     if (res.status_code != 200):
         print(res.status_code)
+        print("read_block_children", res.text)
 
     data = res.json()
 
