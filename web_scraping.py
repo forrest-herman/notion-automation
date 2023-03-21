@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OS_NAME = os.getenv('OS')
+CHIPSET = os.getenv('CHIPSET')
 
 '''
 The Selenium package is used to automate web browser interaction with python.
@@ -22,46 +23,68 @@ Make sure the correct chrome driver is installed https://chromedriver.chromium.o
 WINDOW_SIZE = "1200,1200"
 
 
-def get_chrome_driver_exact_location():
+def get_driver_exact_location(browser_name=None):
     if OS_NAME:
-        chrome_driver = ''
+        driver_path = ''
         if OS_NAME == 'Windows_NT':
-            chrome_driver = 'chromedriver_win32/chromedriver.exe'
+            if browser_name == 'chrome':
+                driver_path = 'chrome_drivers/chromedriver_win32/chromedriver.exe'
+            else:
+                driver_path = 'edge_drivers/edgedriver_win64/msedgedriver.exe'
         elif OS_NAME == 'Linux':
-            chrome_driver = 'chromedriver_linux64/chromedriver'
+            driver_path = 'chrome_drivers/chromedriver_linux64/chromedriver'
         elif OS_NAME == 'MacOS':
-            chrome_driver = 'chromedriver_mac64/chromedriver'
+            # TODO: what happens if .env variable is missing?
+            if CHIPSET == 'M1':
+                driver_path = 'edge_drivers/edgedriver_mac64_m1/msedgedriver'
+            else:
+                driver_path = 'edge_drivers/edgedriver_mac64/msedgedriver'
+                driver_path = 'chrome_drivers/chromedriver_mac64/chromedriver'
         else:
             print(f'OS {OS_NAME} not supported')
             return None
 
-        chrome_driver_path = f'chromedrivers/{chrome_driver}'
-        return os.path.join(os.path.dirname(__file__), chrome_driver_path)
+        driver_path = f'web_drivers/{driver_path}'
+        return os.path.join(os.path.dirname(__file__), driver_path)
 
     # no OS name found
     return os.getenv('CHROME_DRIVER_PATH')
 
 
-CHROME_DRIVER_PATH = get_chrome_driver_exact_location()
+CHROME_DRIVER_PATH = get_driver_exact_location('chrome')
+EDGE_DRIVER_PATH = get_driver_exact_location('edge')
 
 
-def build_driver(link=None, chrome_driver=CHROME_DRIVER_PATH):
-    options = webdriver.ChromeOptions()
+def build_driver(link=None, chrome_driver=CHROME_DRIVER_PATH, edge_driver=EDGE_DRIVER_PATH):
+    # check for edge driver
+    # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
+    try:
+        options = webdriver.EdgeOptions()
+        options.add_argument("headless") # list of strings
 
-    # for heroku use this:
-    chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
-    if chrome_bin:
-        options.binary_location = chrome_bin
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
+        driver = webdriver.Edge(edge_driver, options=options)
+        # service = Service(verbose = True)
+        # driver = webdriver.Edge(service=service)
+    except:
+        print('Edge driver not found')
 
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--ignore-ssl-errors')
+        options = webdriver.ChromeOptions()
 
-    options.add_argument("--headless")
-    options.add_argument("--window-size=%s" % WINDOW_SIZE)
-    options.add_argument('--log-level=1')
-    driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
+        # for heroku use this:
+        # chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
+        # if chrome_bin:
+        #     options.binary_location = chrome_bin
+        #     options.add_argument("--disable-dev-shm-usage")
+        #     options.add_argument("--no-sandbox")
+
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
+
+        options.add_argument("--headless")
+        options.add_argument("--window-size=%s" % WINDOW_SIZE)
+        options.add_argument('--log-level=1')
+
+        driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
 
     if link:
         driver.get(link)
