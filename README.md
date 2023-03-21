@@ -27,4 +27,4 @@
 - [x] Add calendar integration for events
 - [x] Add proper tags based on template
 - [x] Goodreads web scraper integration for my reading list
-- [] Add testing suite
+- [ ] Add testing suite
