@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OS_NAME = os.getenv('OS')
+# TODO: what happens if .env variable is missing?
 CHIPSET = os.getenv('CHIPSET')
+# print(CHIPSET)
 
 '''
 The Selenium package is used to automate web browser interaction with python.
@@ -25,7 +27,6 @@ WINDOW_SIZE = "1200,1200"
 
 def get_driver_exact_location(browser_name=None):
     if OS_NAME:
-        driver_path = ''
         if OS_NAME == 'Windows_NT':
             if browser_name == 'chrome':
                 driver_path = 'chrome_drivers/chromedriver_win32/chromedriver.exe'
@@ -34,12 +35,14 @@ def get_driver_exact_location(browser_name=None):
         elif OS_NAME == 'Linux':
             driver_path = 'chrome_drivers/chromedriver_linux64/chromedriver'
         elif OS_NAME == 'MacOS':
-            # TODO: what happens if .env variable is missing?
             if CHIPSET == 'M1':
-                driver_path = 'edge_drivers/edgedriver_mac64_m1/msedgedriver'
+                if browser_name == 'edge':
+                    driver_path = 'edge_drivers/edgedriver_mac64_m1/msedgedriver'
             else:
-                driver_path = 'edge_drivers/edgedriver_mac64/msedgedriver'
-                driver_path = 'chrome_drivers/chromedriver_mac64/chromedriver'
+                if browser_name == 'edge':
+                    driver_path = 'edge_drivers/edgedriver_mac64/msedgedriver'
+                else:
+                    driver_path = 'chrome_drivers/chromedriver_mac64/chromedriver'
         else:
             print(f'OS {OS_NAME} not supported')
             return None
@@ -55,12 +58,12 @@ CHROME_DRIVER_PATH = get_driver_exact_location('chrome')
 EDGE_DRIVER_PATH = get_driver_exact_location('edge')
 
 
-def build_driver(link=None, chrome_driver=CHROME_DRIVER_PATH, edge_driver=EDGE_DRIVER_PATH):
+def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_DRIVER_PATH):
     # check for edge driver
     # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
     try:
         options = webdriver.EdgeOptions()
-        options.add_argument("headless") # list of strings
+        options.add_argument("--headless=new")  # list of strings
 
         driver = webdriver.Edge(edge_driver, options=options)
         # service = Service(verbose = True)
