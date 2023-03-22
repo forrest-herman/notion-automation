@@ -28,3 +28,7 @@
 - [x] Add proper tags based on template
 - [x] Goodreads web scraper integration for my reading list
 - [ ] Add testing suite
+- [ ] Integrate Cloud Firestore as storage for user_data and logs
+  - [x] Create daily-automations Firebase account
+  - [ ] Add write and read scripts for ease of use
+  - [ ] Integrate into existing scripts
