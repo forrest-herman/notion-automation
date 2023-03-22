@@ -264,6 +264,7 @@ def create_notion_game_page(game, last_played=None, start_play=None):
         }
     }
 
+    # Delete if unnecessary -- remove empty props
     # if last_played is None:
     #     props = ['Dates Played', 'Last Played', 'Hours Played']
     #     for prop in props:
