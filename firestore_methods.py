@@ -31,6 +31,8 @@ def set_firestore_document(collection: str, document: str, data: dict, merge: bo
     doc_ref.set(data, merge=merge)
 
 
+# utility functions
+
 def set_last_updated(document: str, new_date: datetime):
     data = {
         'lastUpdated': new_date
@@ -38,9 +40,19 @@ def set_last_updated(document: str, new_date: datetime):
     set_firestore_document('logs', document, data)
 
 
-# set_last_updated('gamingTracker', datetime.now())
-last_updated = get_firestore_document('logs', 'gamingTracker')['lastUpdated']
-print(type(last_updated))
-
-
 # TODO: add functions for current books, etc.
+def get_current_book():
+    return get_firestore_document('data', 'books').get('currentBook', None)
+
+
+def set_current_book(book_details: dict):
+    data = {
+        'currentBook': book_details
+    }
+    set_firestore_document('data', 'books', data, merge=True)
+
+
+if __name__ == '__main__':
+    # set_last_updated('gamingTracker', datetime.now())
+    last_updated = get_firestore_document('logs', 'gamingTracker')['lastUpdated']
+    print(type(last_updated))
