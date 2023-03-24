@@ -15,8 +15,21 @@ def retrieve_firestore() -> firestore_v1.Client:
     return db
 
 
-def get_firestore_document(collection: str, document: str):
-    db = retrieve_firestore()
+def retrieve_doc_ref(document_path: str):
+    """document_path is a string of the form 'collection_1/document_1/collection_2/document_2'"""
+
+    doc_ref = db
+
+    for i, _ref in enumerate(document_path.split('/')):
+        if i % 2 == 0:  # even is collection
+            doc_ref = doc_ref.collection(_ref)
+        else:  # odd is document
+            doc_ref = doc_ref.document(_ref)
+
+    return doc_ref
+
+
+def get_firestore_document_simple(collection: str, document: str):
     doc_ref = db.collection(collection).document(document)
     doc = doc_ref.get()
     if doc.exists:
@@ -25,10 +38,31 @@ def get_firestore_document(collection: str, document: str):
         return None
 
 
-def set_firestore_document(collection: str, document: str, data: dict, merge: bool = False):
-    db = retrieve_firestore()
-    doc_ref = db.collection(collection).document(document)
+def get_firestore_document(document_path: str):
+    doc_ref = retrieve_doc_ref(document_path)
+
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return None
+    
+
+def get_firestore_collection(collection_path: str):
+    col_ref = retrieve_doc_ref(collection_path)
+
+    collection = col_ref.stream()
+    return [doc.to_dict() for doc in collection]
+
+
+def set_firestore_document(document_path: str, data: dict, merge: bool = False):
+    doc_ref = retrieve_doc_ref(document_path)
     doc_ref.set(data, merge=merge)
+
+
+def add_document_to_collection(collection_path: str, data: dict):
+    col_ref = retrieve_doc_ref(collection_path)
+    col_ref.add(data)
 
 
 # utility functions
@@ -37,22 +71,33 @@ def set_last_updated(document: str, new_date: datetime):
     data = {
         'lastUpdated': new_date
     }
-    set_firestore_document('logs', document, data)
+    set_firestore_document(f'logs/{document}', data)
 
 
 # TODO: add functions for current books, etc.
-def get_current_book():
-    return get_firestore_document('data', 'books').get('currentBook', None)
+def get_current_books_from_store():
+    return get_firestore_collection('data/books/currentlyReading')
+    # return get_firestore_document('data/books/currentlyReading/').get('currentBook', None)
 
 
-def set_current_book(book_details: dict):
-    data = {
-        'currentBook': book_details
-    }
-    set_firestore_document('data', 'books', data, merge=True)
+def add_current_book_to_store(book_details: dict):
+    title = book_details.get('title', None)
+    book_details['lastUpdated'] = datetime.now()
+    if title is None:
+        add_document_to_collection('data/books/currentlyReading', book_details)
+    else:
+        set_firestore_document(f'data/books/currentlyReading/{title}', book_details, merge=True)
+
+
+db = retrieve_firestore()
 
 
 if __name__ == '__main__':
     # set_last_updated('gamingTracker', datetime.now())
-    last_updated = get_firestore_document('logs', 'gamingTracker')['lastUpdated']
-    print(type(last_updated))
+    # last_updated = get_firestore_document_simple('logs', 'gamingTracker')['lastUpdated']
+    test = get_firestore_document('data/books/currentlyReading/test')
+    print(test)
+    last_updated = get_firestore_document('logs/gamingTracker')['lastUpdated']
+    print(last_updated.date())
+
+    print("currentBooks",get_current_books_from_store())
