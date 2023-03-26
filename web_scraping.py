@@ -99,6 +99,7 @@ def get_html_using_selenium(url=None, driver=None):
         driver = build_driver()
 
     if url:
+        print(f'Opening url: {url}')
         driver.get(url)
 
     # handle infinite scroll

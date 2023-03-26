@@ -31,13 +31,26 @@ def get_rating_from_text(rating_text):
     return rating
 
 
-def get_progress_from_home_page(url=URL_HOMEPAGE):
+def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     html_str = get_html_using_selenium(url)
     soup = BeautifulSoup(html_str, 'lxml')
-    progress = soup.find(class_='graphContainer progressGraph').find(class_='graphBar').get('style')
-    progress = re.search(r'width: (\d+)%', progress).group(1)
 
-    return progress  # current progress percentage
+    # TODO: find specific book progress, not just the first one
+    # Use a findall and then loop through the list to find the book you want.
+    books_progress_html = soup.find_all(class_='graphContainer progressGraph')
+    books_progress = {}
+    for progress_html in books_progress_html:
+        progress = progress_html.find(class_='graphBar').get('style')
+        progress = re.search(r'width: (\d+)%', progress).group(1)
+
+        title = progress_html.parent.parent.find('a', class_='bookTitle').text
+        # format the title
+        title = re.search(r'^(.+?)(\s\(.*\))?$', title).group(1)
+        books_progress[title] = progress
+
+    if book_title and progress:
+        return progress  # current progress percentage
+    return books_progress # dict of book titles and their progress
 
 
 def get_books_list_data_from_html(html_str):
