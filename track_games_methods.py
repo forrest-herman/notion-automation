@@ -1,6 +1,7 @@
 import datetime
 from notion_api_methods import *
 from tracking_games.steam_api_methods import *
+from firestore_methods import get_firestore_collection, set_firestore_document
 # get_recently_played_games, get_game_img_url, STEAM_ID
 
 
@@ -68,50 +69,16 @@ def lookup_game_in_notion(steam_game):
     return game_page
 
 
-# main function
-def update_games_list():
-    recent_games = get_recently_played_games(STEAM_ID).get('games', [])
-
-    for game in recent_games:
-        # process the game data from the api query
-        extra_game_info = get_owned_games(STEAM_ID, [game['appid']])['games'][0]
-        game = game | extra_game_info  # merge the two dictionaries
-
-        last_played = get_last_played(extra_game_info)
-        start_play = last_played - datetime.timedelta(minutes=game['playtime_forever'])
-
-        game_page = lookup_game_in_notion(game)
-
-        if game_page is None:
-            # game page doesn't exist, create it
-            create_notion_game_page(game, last_played, start_play)
-        else:
-            game_props = game_page.get('properties')  # notion game page properties
-
-            # check if playtime_forever is greater than 'hours played' column
-            prev_hours = game_props['Hours Played']['number']
-            if prev_hours == format_playtime_hrs(game['playtime_forever']):
-                print("No change in playtime for", game['name'])
-                continue
-
-            achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
-            achievements = achievements['playerstats'].get('achievements', None)
-
-            update_notion_game_page(game, game_page, achievements)
-
-    if datetime.date.today().weekday() == 6:  # is Sunday
-        # do this once a week
-        print("--------------------\nWeekly Game Update...\n--------------------")
-        update_all_games(recent_games)
-
-    return True
-    # The End #
-
-
 def update_all_games(recent_games=[]):
     all_steam_games = get_owned_games(STEAM_ID)['games']
 
+    firestore_games = get_firestore_collection('data/games/steamGames')
+
     for game in all_steam_games:
+        # check in the database if the game was ever updated
+        if game['appid'] in [g['appid'] for g in firestore_games]:
+            continue
+
         # check if the game is on the recent games list
         if game['appid'] in [g['appid'] for g in recent_games]:
             continue
@@ -124,9 +91,12 @@ def update_all_games(recent_games=[]):
             # update the game page
             update_notion_game_page(game, game_page)
 
+        set_firestore_document(f"data/games/steamGames/{game['name']}", game)
+
 
 def update_notion_game_page(game, prev_page_data, achievements=None):
     last_played = get_last_played(game)
+    is_played_recent = last_played > datetime.datetime.now() - datetime.timedelta(days=7) if last_played else False
 
     pageData = {
         "properties": {
@@ -143,7 +113,7 @@ def update_notion_game_page(game, prev_page_data, achievements=None):
             "Status": {
                 "type": "status",
                 "status": {
-                    "name": "Taking a break" if last_played else "Never Played"
+                    "name": "In progress" if is_played_recent else "Taking a break" if last_played else "Never Played"
                 }
             },
             "Last Played": {
@@ -173,6 +143,7 @@ def update_notion_game_page(game, prev_page_data, achievements=None):
             }
         }
     }
+    # overwrite the status if it was completed
     prev_status = prev_page_data['properties']['Status']['status']['name']
     if prev_status == "Completed":
         pageData['properties']['Status']['status']['name'] = "Completed"
@@ -274,34 +245,49 @@ def create_notion_game_page(game, last_played=None, start_play=None):
     print("Create new page for game:", game['name'])
     create_page(pageData)
 
-# update_games_list()
 
-# testing
-# data = get_owned_games(STEAM_ID)
-# game_ids = [game.get("appid") for game in data['response']['games']]
-# print(game_ids)
+# main function
+def update_games_list():
+    recent_games = get_recently_played_games(STEAM_ID).get('games', [])
 
-# print(get_player_summaries(STEAM_ID))
-# for id in game_ids:
-#     res = get_user_achievements_for_game(STEAM_ID, id)
-#     achievements = res['playerstats'].get('achievements', None)
-#     if achievements is not None:
-#         percent = get_achievement_percentage(achievements)
-#         print(id, percent, "%")
-# get_user_stats_for_game(STEAM_ID, id)
-# break
+    for game in recent_games:
+        # process the game data from the api query
+        extra_game_info = get_owned_games(STEAM_ID, [game['appid']])['games'][0]
+        game = game | extra_game_info  # merge the two dictionaries
 
+        last_played = get_last_played(extra_game_info)
+        start_play = last_played - datetime.timedelta(minutes=game['playtime_forever'])
 
-# recent_games = get_recently_played_games(STEAM_ID).get('games', [])
-# print(recent_games)
-# id = recent_games[0]['appid']
-# test = get_owned_games(STEAM_ID, [id])
-# timestamp = test['response']['games'][0]['rtime_last_played']
-# test = datetime.datetime.fromtimestamp(timestamp)
-# print(test)
+        game_page = lookup_game_in_notion(game)
+
+        if game_page is None:
+            # game page doesn't exist, create it
+            create_notion_game_page(game, last_played, start_play)
+        else:
+            game_props = game_page.get('properties')  # notion game page properties
+
+            # check if playtime_forever is greater than 'hours played' column
+            prev_hours = game_props['Hours Played']['number']
+            if prev_hours == format_playtime_hrs(game['playtime_forever']):
+                print("No change in playtime for", game['name'])
+                continue
+
+            achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
+            achievements = achievements['playerstats'].get('achievements', None)
+
+            update_notion_game_page(game, game_page, achievements)
+
+    if datetime.date.today().weekday() == 6:  # is Sunday
+        # do this once a week
+        print("--------------------\nWeekly Game Update...\n--------------------")
+        update_all_games(recent_games)
+
+    return True
+    # The End #
+
 
 def main():
-    update_games_list()
+    # update_games_list()
     update_all_games()
 
 
