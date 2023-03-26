@@ -69,7 +69,7 @@ def lookup_game_in_notion(steam_game):
     return game_page
 
 
-def update_all_games(recent_games=[]):
+def update_all_games(recent_games=[], get_all_data=False):
     all_steam_games = get_owned_games(STEAM_ID)['games']
 
     firestore_games = get_firestore_collection('data/games/steamGames')
@@ -89,7 +89,13 @@ def update_all_games(recent_games=[]):
             create_notion_game_page(game)
         else:
             # update the game page
-            update_notion_game_page(game, game_page)
+            if get_all_data:
+                achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
+                achievements = achievements['playerstats'].get('achievements', None)
+            else:
+                achievements = None
+                
+            update_notion_game_page(game, game_page, achievements)
 
         set_firestore_document(f"data/games/steamGames/{game['name']}", game)
 
@@ -128,7 +134,7 @@ def update_notion_game_page(game, prev_page_data, achievements=None):
             },
             "Progress": {
                 "type": "number",
-                "number": get_achievement_percentage(achievements) if achievements else None
+                "number": get_achievement_percentage(achievements) if achievements else prev_page_data['properties']['Progress']['number']
             },
             "appid": {
                 "type": "rich_text",
@@ -288,7 +294,7 @@ def update_games_list():
 
 def main():
     # update_games_list()
-    update_all_games()
+    update_all_games(get_all_data=True)
 
 
 if __name__ == '__main__':
