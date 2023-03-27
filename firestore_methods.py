@@ -54,10 +54,14 @@ def get_firestore_document(document_path: str):
         return {}
     
 
-def get_firestore_collection(collection_path: str):
+def get_firestore_collection(collection_path: str, return_type: str = 'dict'):
     col_ref = retrieve_doc_ref(collection_path)
 
     collection = col_ref.stream()
+    if return_type == 'dict':
+        return {doc.id: doc.to_dict() for doc in collection}
+    elif return_type == 'list':
+        return [doc.to_dict() for doc in collection]
     return [doc.to_dict() for doc in collection]
 
 
@@ -86,11 +90,12 @@ def get_current_books_from_store():
 
 def add_current_book_to_store(book_details: dict):
     title = book_details.get('title', None)
+    author = book_details.get('author_name', '')
     book_details['last_updated'] = datetime.now()
     if title is None:
         add_document_to_collection('data/books/currentlyReading', book_details)
     else:
-        set_firestore_document(f'data/books/currentlyReading/{title}', book_details, merge=False)
+        set_firestore_document(f'data/books/currentlyReading/{title}, {author}', book_details, merge=False)
 
 
 db = retrieve_firestore()

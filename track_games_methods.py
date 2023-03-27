@@ -76,7 +76,7 @@ def update_all_games(recent_games=[], get_all_data=False):
 
     for game in all_steam_games:
         # check in the database if the game was ever updated
-        if game['appid'] in [g['appid'] for g in firestore_games]:
+        if game['name'] in firestore_games:
             continue
 
         # check if the game is on the recent games list
@@ -294,7 +294,8 @@ def update_games_list():
 
 def main():
     # update_games_list()
-    update_all_games(get_all_data=True)
+    # update_all_games(get_all_data=True)
+    update_all_games(get_all_data=False)
 
 
 if __name__ == '__main__':
