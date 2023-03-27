@@ -1,3 +1,4 @@
+import datetime
 from notion_api_methods import *
 import notion_utils
 from goodreads import get_book_details_from_url
@@ -95,17 +96,29 @@ def get_book_stats_page_id(date):
     }
     stats_pages = query_database_pages(stats_database_id, payload)
     if len(stats_pages) == 0:
-        # TODO: handle this we need a new stats page for the year
-        pass
-
-    stats_page_id = stats_pages[0]['id']
-    # book_stats_2022_id = '096a5fbdc1b64f3dbc0681b083d0349f'
-    # book_stats_2023_id = '9ef1139db1c54da29e3eeabdc878c214'
-    # book_stats_2023_id = '9ef1139d-b1c5-4da2-9e3e-eabdc878c214'
-    # if year == "2022":
-    #     return book_stats_2022_id
-    # elif year == "2023":
-    #     return book_stats_2023_id
+        # create new stats page for the year
+        newPageData = {
+            "parent": {"database_id": stats_database_id},
+            "properties": {
+                "Name": {
+                    "title": [
+                        {
+                            "text": {
+                                "content": f'{year} Book Stats'
+                            }
+                        }
+                    ]
+                },
+                "Year": {
+                    "date": {
+                        "start": datetime.date(int(year), 1, 1).isoformat()
+                    }
+                }
+            }
+        }
+        stats_page_id = create_page(newPageData)["id"]
+    else:
+        stats_page_id = stats_pages[0]['id']
 
     return stats_page_id
 
