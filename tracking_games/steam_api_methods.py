@@ -123,7 +123,7 @@ def get_user_achievements_for_game(player_id, appid):
 
     result = requests.get(url)
     if (result.status_code != 200):
-        print(result.status_code)
+        print(result.status_code, result.text, "No achievements found for appid:", appid)
 
     data = result.json()
     return data
