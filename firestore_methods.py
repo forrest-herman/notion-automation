@@ -84,6 +84,13 @@ def set_last_updated(document: str, new_date: datetime=datetime.now()):
     set_firestore_document(f'logs/{document}', data)
 
 
+def get_last_updated(document: str):
+    last_updated = get_firestore_document(f'logs/{document}').get('lastUpdated')
+    if isinstance(last_updated, datetime):
+        return datetime.fromtimestamp(last_updated.timestamp())
+    return None
+
+
 def get_current_books_from_store():
     return get_firestore_collection('data/books/currentlyReading')
 
