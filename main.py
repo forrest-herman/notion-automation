@@ -19,9 +19,9 @@ def main():
             set_last_updated('notion_journal')
 
     # Goodreads/reading tracker
-    last_updated = None # get_firestore_document('logs/notion_readingList').get('lastUpdated') # TODO: Uncomment this check
+    last_updated = get_firestore_document('logs/notion_readingList').get('lastUpdated')
     if last_updated is None or last_updated.date() < datetime.now().date(): # TODO: change to less than 1 hour ago
-        books_read, currently_reading = goodreads.get_read_and_reading(all_time=True) # TODO: set back to false
+        books_read, currently_reading = goodreads.get_read_and_reading(all_time=False)
         prev_curr_books = get_current_books_from_store() # dict of book dicts
 
         # get progress for books that are currently being read
@@ -40,7 +40,7 @@ def main():
             if not firestore_book or firestore_book['progress'] != book['progress']:
                 add_current_book_to_store(book)
                 print(f"Book {book['title']} has been updated on Firestore")
-                prev_curr_books.pop(firestore_book_key, '') # remove the old book from the dict
+            prev_curr_books.pop(firestore_book_key, '') # remove the old book from store if it exists
 
         for _key, book in prev_curr_books.items():
             if book.get('progress', 0) == 100:
@@ -64,3 +64,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    

@@ -1,4 +1,5 @@
 import os
+import time
 from selenium import webdriver
 # from selenium.webdriver.common.by import By
 from utils import write_to_file
@@ -58,12 +59,16 @@ CHROME_DRIVER_PATH = get_driver_exact_location('chrome')
 EDGE_DRIVER_PATH = get_driver_exact_location('edge')
 
 
-def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_DRIVER_PATH):
+def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_DRIVER_PATH, headless=True):
     # check for edge driver
     # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
     try:
         options = webdriver.EdgeOptions()
-        options.add_argument("--headless=new")  # list of strings
+        options.add_argument('inprivate')
+        options.add_argument('--log-level=3')
+        options.add_argument("--window-size=%s" % WINDOW_SIZE)
+        if headless:
+            options.add_argument("--headless")
 
         driver = webdriver.Edge(edge_driver, options=options)
         # service = Service(verbose = True)
@@ -83,7 +88,8 @@ def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_D
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--ignore-ssl-errors')
 
-        options.add_argument("--headless")
+        if headless:
+            options.add_argument("--headless")
         options.add_argument("--window-size=%s" % WINDOW_SIZE)
         options.add_argument('--log-level=1')
 
@@ -94,7 +100,7 @@ def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_D
     return driver
 
 
-def get_html_using_selenium(url=None, driver=None):
+def get_html_using_selenium(url=None, driver=None, infinite_scroll=False):
     if driver is None:
         driver = build_driver()
 
@@ -102,17 +108,18 @@ def get_html_using_selenium(url=None, driver=None):
         print(f'Opening url: {url}')
         driver.get(url)
 
-    # handle infinite scroll
-    # lenOfPage = driver.execute_script(
-    #     "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
-    # match = False
-    # while(match is False):
-    #     lastCount = lenOfPage
-    #     time.sleep(3)
-    #     lenOfPage = driver.execute_script(
-    #         "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
-    #     if lastCount == lenOfPage:
-    #         match = True
+    if infinite_scroll:
+        # handle infinite scroll
+        lenOfPage = driver.execute_script(
+            "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
+        match = False
+        while(match is False):
+            lastCount = lenOfPage
+            time.sleep(3)
+            lenOfPage = driver.execute_script(
+                "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
+            if lastCount == lenOfPage:
+                match = True
 
     # Page is fully scrolled now. Next step is to extract the source code from it.
     my_html = driver.page_source

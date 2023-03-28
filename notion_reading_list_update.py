@@ -2,6 +2,7 @@ import datetime
 from notion_api_methods import *
 import notion_utils
 from goodreads import get_book_details_from_url
+from firestore_methods import log_error
 
 from utils import save_json_to_file
 
@@ -38,7 +39,7 @@ def update_reading_list(read_list, currently_reading_list):
             else:
                 # book needs to be added to the reads list
                 add_read_date(notion_book["id"], goodreads_book)
-                print("Book added to the reads list")
+                print(f"'{goodreads_book['title']}' added to the reads list")
 
             # check if the book status is correct
             if(notion_book['properties']['Status']['status'] is None or notion_book['properties']['Status']['status']['name'] != 'Read'):
@@ -50,6 +51,7 @@ def update_reading_list(read_list, currently_reading_list):
             notion_book = create_book_page(goodreads_book)
             print('Created new book page:', goodreads_book['title'])
             add_read_date(notion_book["id"], goodreads_book)
+
 
     # CURENTLY READING LIST
     for goodreads_book in currently_reading_list:
@@ -131,12 +133,12 @@ def create_book_page(book_details):
         additional_book_details = get_book_details_from_url(goodreads_book_url)
         book_details.update(additional_book_details)
     except Exception as e:
-        print(e)
-        # sometimes it fails for no reason, so we just retry
-        additional_book_details = get_book_details_from_url(goodreads_book_url)
-        book_details.update(additional_book_details)
-    except:
-        print('Error getting book details')
+        log_error(
+            title='Error getting extra book details',
+            error=e,
+            location='notion_reading_list_update, create_book_page', 
+            data=book_details
+        )
 
     newPageData_book = {
         "parent": {"database_id": books_database_id},
@@ -180,16 +182,6 @@ def create_book_page(book_details):
                     # "color": "default"
                 }
             },
-            "Date started": {
-                "date": {
-                    "start": book_details['date_started'],
-                }
-            },
-            "Date finished": {
-                "date": {
-                    "start": book_details['date_read']
-                } if book_details['date_read'] else None
-            },
             "Status": {
                 "type": "status",
                 "status": {
@@ -232,16 +224,6 @@ def update_book_page(page_to_update, book_details):
     # update page properites
     newBookPageData = {
         "properties": {
-            "Date started": {
-                "date": {
-                    "start": book_details['date_started']
-                }
-            },
-            "Date finished": {
-                "date": {
-                    "start": book_details['date_read']
-                } if book_details['date_read'] else None
-            },
             "Status": {
                 "status": {
                     "name": "Read" if book_details['date_read'] else "Currently Reading",
@@ -273,6 +255,15 @@ def update_book_page(page_to_update, book_details):
 
 def add_read_date(notion_book_page_id, book_details):
     """Add a read date for a book"""
+    if book_details.get('date_started') is None:
+        # error check, some books on Goodreads don't have a start date
+        log_error(
+            title='No start date found for book',
+            location='notion_reading_list_update, update_reading_list, add_read_date', 
+            data=book_details
+        )
+        return None
+
     newPageData_read = {
         "parent": {"database_id": reads_database_id},
         "properties": {
@@ -375,6 +366,10 @@ def update_read_date(page_to_update_id, book_details):
 # QUERY FOR NOTION DATABASE ENTRIES
 
 def query_reads_list(notion_book, book_details):
+    # make sure the book has a date started
+    if book_details.get('date_started') is None:
+        return None
+
     read_list_query_payload = {
         "filter": {
             "and": [

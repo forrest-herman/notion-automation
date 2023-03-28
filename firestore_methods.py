@@ -98,6 +98,19 @@ def add_current_book_to_store(book_details: dict):
         set_firestore_document(f'data/books/currentlyReading/{title}, {author}', book_details, merge=False)
 
 
+def log_error(title: str, error='', location: str = "", data: dict = {}):
+    print(error)
+    timestamp = datetime.now()
+    data = {
+        'title': title,
+        'error': str(error),
+        'location': location,
+        'data': data
+    }
+    set_firestore_document(f'errors/{timestamp}', data)
+
+
+
 db = retrieve_firestore()
 
 
@@ -110,3 +123,10 @@ if __name__ == '__main__':
     print(last_updated.date())
 
     print("currentBooks",get_current_books_from_store())
+
+    # log_error(
+    #     title='Error getting extra book details',
+    #     error='e',
+    #     location='Notion Reading List, Create Book Page', 
+    #     data={"test": "test"}
+    # )

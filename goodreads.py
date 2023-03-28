@@ -1,13 +1,19 @@
 import re
 import datetime
+import time
 from utils import write_to_file
 from utils import save_json_to_file
 from bs4 import BeautifulSoup
 # BeautifulSoup is a python library to scrap data from web pages.
 
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementClickInterceptedException
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from web_scraping import get_html_using_selenium, build_driver
+from firestore_methods import log_error
+
 
 URL_HOMEPAGE = 'https://www.goodreads.com/user/show/58061822-forrest-herman'
 URL_BOOKS_READ = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read'
@@ -35,8 +41,7 @@ def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     html_str = get_html_using_selenium(url)
     soup = BeautifulSoup(html_str, 'lxml')
 
-    # TODO: find specific book progress, not just the first one
-    # Use a findall and then loop through the list to find the book you want.
+    # get the progress percentage for all currently reading books
     books_progress_html = soup.find_all(class_='graphContainer progressGraph')
     books_progress = {}
     for progress_html in books_progress_html:
@@ -93,15 +98,12 @@ def get_books_list_data_from_html(html_str):
         # parse title, series, and book's url
         td = tr.find_all('td', {'class': 'field title'})[0]
         a_link = td.find_all('a')[0]
-        full_title = a_link.get('title')
-        # parse title for a series component
-        find_series_regex = r"\s+?[(\]]([a-zA-Z+&,']+\s)*#\d+\.?\d*[)\]]"
-        series = re.search(find_series_regex, full_title)
+        # full_title = a_link.get('title')
+        title = a_link.find(text=True, recursive=False).strip()
+        series = a_link.find('span', {'class': 'darkGreyText'})
         if series:
-            # if it's a series, get the series name and fix the book title
-            full_title = full_title.replace(series.group(0), '')
-            series = series.group(0).strip(" ()")
-        book_dict['title'] = full_title
+            series = series.text.strip(" ()")
+        book_dict['title'] = title
         book_dict['series'] = series
         book_dict['book_url'] = a_link.get('href')
 
@@ -145,7 +147,7 @@ def get_books_list_data_from_html(html_str):
         for date_html in span:
             date_started = date_html.text
             dates_started.append(convert_date_to_isoformat(date_started))
-        book_dict['date_started'] = max(dates_started)
+        book_dict['date_started'] = max(dates_started) if dates_started else None
         # store number of dates started to confirm # of dates finished
         reads = len(dates_started)
 
@@ -173,14 +175,51 @@ def get_books_list_data_from_html(html_str):
 def get_book_details_from_url(book_url):
     """Get the book details from the url provided."""
 
-    driver = build_driver(book_url)
+    driver = build_driver(book_url, headless=True)
 
     # click the show more genres button
-    show_more_genres_button = driver.find_element(
-        By.CSS_SELECTOR,
-        "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
-    )
-    show_more_genres_button.click()
+    try:
+        title_elem = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+        )
+        show_more_genres_button = driver.find_element(
+            By.CSS_SELECTOR,
+            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+        )
+        show_more_genres_button.click()
+    except TimeoutException:
+        print("The book page wouldn't load: ", book_url, "Reloading...")
+        driver.refresh()
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+            )
+            show_more_genres_button = driver.find_element(
+                By.CSS_SELECTOR,
+                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+            )
+            show_more_genres_button.click()
+        except TimeoutException:
+            raise Exception("Couldn't load book details page")
+        except (NoSuchElementException, ElementClickInterceptedException) as e:
+            # TODO: find a way to remove duplicate code below
+            log_error(
+                title='Error clicking show more genres button',
+                error=e,
+                location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
+                data={'book_url': book_url}
+            )
+    except (NoSuchElementException, ElementClickInterceptedException) as e:
+        log_error(
+            title='Error clicking show more genres button',
+            error=e,
+            location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
+            data={'book_url': book_url}
+        )
+    # if that's not it, maybe it's a goodreads login popup
+    # popup_close_btn = driver.find_element(By.CSS_SELECTOR,
+    #   "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button__container"
+    # )
 
     html_str = get_html_using_selenium(driver=driver)
 
@@ -239,12 +278,12 @@ def filter_and_sort_books(book_list, year):
     return sorted_list
 
 
-def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING]):
+def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING], all_time=False):
     book_lists = []
 
     for url in urls:
         # get the webpage html
-        html_str = get_html_using_selenium(url)
+        html_str = get_html_using_selenium(url, infinite_scroll=all_time)
         # get the book data list (reading or read)
         book_list = get_books_list_data_from_html(html_str)
         book_lists.append(book_list)
