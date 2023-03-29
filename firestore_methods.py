@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import firestore, credentials
 from google.cloud import firestore_v1
@@ -77,10 +77,8 @@ def add_document_to_collection(collection_path: str, data: dict):
 
 # utility functions
 
-def set_last_updated(document: str, new_date: datetime=datetime.now()):
-    data = {
-        'lastUpdated': new_date
-    }
+def set_last_updated(document: str, new_date: datetime=datetime.now(timezone.utc)):
+    data = {'lastUpdated': new_date}
     set_firestore_document(f'logs/{document}', data)
 
 

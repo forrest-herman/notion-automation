@@ -18,9 +18,9 @@ def main():
             print("Journal entry created")
             set_last_updated('notion_journal')
 
-    # Goodreads/reading tracker
+    # Goodreads/reading tracker (run at most every 3 hours)
     last_updated = get_last_updated('notion_readingList')
-    if last_updated is None or last_updated < datetime.now() - timedelta(hours=2):
+    if last_updated is None or last_updated < datetime.now() - timedelta(hours=3):
         books_read, currently_reading = goodreads.get_read_and_reading(all_time=False)
         prev_curr_books = get_current_books_from_store() # dict of book dicts
 
@@ -52,7 +52,7 @@ def main():
         notion_reading_list_update.update_reading_list(books_read, currently_reading)
         set_last_updated('notion_readingList') # add a log that it was successfully updated
 
-    # gaming tracker
+    # gaming tracker (run at most every once a day)
     last_updated = get_firestore_document('logs/notion_gamingTracker').get('lastUpdated')
     if last_updated is None or last_updated.date() < datetime.now().date():
         update_games_list()
