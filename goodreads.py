@@ -47,11 +47,13 @@ def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     for progress_html in books_progress_html:
         progress = progress_html.find(class_='graphBar').get('style')
         progress = re.search(r'width: (\d+)%', progress).group(1)
+        progress = int(progress) # cast str to number
 
         title = progress_html.parent.parent.find('a', class_='bookTitle').text
         # format the title
         title = re.search(r'^(.+?)(\s\(.*\))?$', title).group(1)
-        books_progress[title] = progress
+        # ensure we have the highest percentage for the book
+        books_progress[title] = progress if progress > books_progress.get(title, 0) else books_progress.get(title, 0)
 
     if book_title and progress:
         return progress  # current progress percentage
