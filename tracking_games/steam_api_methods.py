@@ -6,6 +6,8 @@ import urllib.parse
 from dotenv import load_dotenv
 load_dotenv()
 
+from firestore_methods import log_error
+
 API_KEY = os.getenv('STEAM_API_KEY')  # steam credentials
 STEAM_ID = os.getenv('STEAM_ID')
 if STEAM_ID is None or API_KEY is None:
@@ -50,6 +52,8 @@ def get_owned_games(player_id, appids_filter=None):
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code)
+        log_error(f'Steam API', result.text, 'get_owned_games', data={'reason': result.reason,'status_code': result.status_code, 'url': result.url, 'text': result.text})
+        return None
 
     data = result.json()
     return data.get('response', {})
@@ -66,6 +70,8 @@ def get_user_stats_for_game(player_id, appid):
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code)
+        log_error(f'Steam API', result.text, 'get_user_stats_for_game', data={'reason': result.reason,'status_code': result.status_code, 'url': result.url, 'text': result.text})
+        return None
 
     data = result.json()
     return data
@@ -82,6 +88,8 @@ def get_stats_for_game(appid):
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code)
+        log_error(f'Steam API', result.text, 'get_stats_for_game', data={'reason': result.reason,'status_code': result.status_code, 'url': result.url, 'text': result.text})
+        return None
 
     data = result.json()
     return data
@@ -108,6 +116,8 @@ def get_recently_played_games(player_id):
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code)
+        log_error(f'Steam API', result.text, 'get_recently_played_games', data={'reason': result.reason,'status_code': result.status_code, 'url': result.url, 'text': result.text})
+        return None
 
     data = result.json()
     return data.get('response', {})
@@ -124,7 +134,9 @@ def get_user_achievements_for_game(player_id, appid):
     result = requests.get(url)
     if (result.status_code != 200):
         print(result.status_code, result.text, "No achievements found for appid:", appid)
-
+        log_error(f'Steam API: No achievements found for appid: {appid}', result.text, 'get_user_achievements_for_game', data={'reason': result.reason,'status_code': result.status_code, 'url': result.url, 'text': result.text})
+        return None
+    
     data = result.json()
     return data
 

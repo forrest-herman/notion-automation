@@ -37,8 +37,7 @@ def get_driver_exact_location(browser_name=None):
             driver_path = 'chrome_drivers/chromedriver_linux64/chromedriver'
         elif OS_NAME == 'MacOS':
             if CHIPSET == 'M1':
-                if browser_name == 'edge':
-                    driver_path = 'edge_drivers/edgedriver_mac64_m1/msedgedriver'
+                driver_path = 'edge_drivers/edgedriver_mac64_m1/msedgedriver'
             else:
                 if browser_name == 'edge':
                     driver_path = 'edge_drivers/edgedriver_mac64/msedgedriver'
@@ -55,45 +54,45 @@ def get_driver_exact_location(browser_name=None):
     return os.getenv('CHROME_DRIVER_PATH')
 
 
-CHROME_DRIVER_PATH = get_driver_exact_location('chrome')
-EDGE_DRIVER_PATH = get_driver_exact_location('edge')
-
-
-def build_driver(link=None, edge_driver=EDGE_DRIVER_PATH, chrome_driver=CHROME_DRIVER_PATH, headless=True):
+def build_driver(link:str=None, browser:str='edge', headless:bool=True):
+    driver_path = get_driver_exact_location(browser)
+    
     # check for edge driver
     # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
     try:
-        options = webdriver.EdgeOptions()
-        options.add_argument('inprivate')
-        options.add_argument('--log-level=3')
-        options.add_argument("--window-size=%s" % WINDOW_SIZE)
-        if headless:
-            options.add_argument("--headless")
+        if browser == 'edge':
+            options = webdriver.EdgeOptions()
+            options.add_argument('inprivate')
+            options.add_argument('--log-level=3')
+            options.add_argument("--window-size=%s" % WINDOW_SIZE)
+            if headless:
+                options.add_argument("--headless")
 
-        driver = webdriver.Edge(edge_driver, options=options)
-        # service = Service(verbose = True)
-        # driver = webdriver.Edge(service=service)
-    except:
-        print('Edge driver not found')
+            driver = webdriver.Edge(driver_path, options=options)
+            # service = Service(verbose = True)
+            # driver = webdriver.Edge(service=service)
+        else:
+            options = webdriver.ChromeOptions()
 
-        options = webdriver.ChromeOptions()
+            # for heroku use this:
+            # chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
+            # if chrome_bin:
+            #     options.binary_location = chrome_bin
+            #     options.add_argument("--disable-dev-shm-usage")
+            #     options.add_argument("--no-sandbox")
 
-        # for heroku use this:
-        # chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
-        # if chrome_bin:
-        #     options.binary_location = chrome_bin
-        #     options.add_argument("--disable-dev-shm-usage")
-        #     options.add_argument("--no-sandbox")
+            options.add_argument('--ignore-certificate-errors')
+            options.add_argument('--ignore-ssl-errors')
 
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--ignore-ssl-errors')
+            if headless:
+                options.add_argument("--headless")
+            options.add_argument("--window-size=%s" % WINDOW_SIZE)
+            options.add_argument('--log-level=1')
 
-        if headless:
-            options.add_argument("--headless")
-        options.add_argument("--window-size=%s" % WINDOW_SIZE)
-        options.add_argument('--log-level=1')
-
-        driver = webdriver.Chrome(executable_path=chrome_driver, chrome_options=options)
+            driver = webdriver.Chrome(executable_path=driver_path, chrome_options=options)
+    except Exception as e:
+        print(f'{browser} driver not found', e)
+        raise e
 
     if link:
         driver.get(link)
