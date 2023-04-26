@@ -7,6 +7,8 @@ from utils import save_json_to_file
 from dotenv import load_dotenv
 load_dotenv()
 
+from firestore_methods import log_error
+
 TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
 if TOKEN is None:
     raise Exception("Notion token not found in .env file.")
@@ -92,6 +94,7 @@ def read_block_children_recursive(block_id, headers=HEADERS):
     if (res.status_code != 200):
         print(res.status_code)
         print("read_block_children_recursive", res.text)
+        log_error(f'Notion API', res.text, 'read_block_children_recursive', data={'reason': res.reason,'status_code': res.status_code, 'url': res.url, 'text': res.text})
 
     data = res.json()
 
@@ -116,6 +119,7 @@ def append_block_children(block_id, blocks_data, headers=HEADERS):
     if (res.status_code != 200):
         print(res.status_code)
         print("append_block_children", res.text)
+        log_error(f'Notion API', res.text, 'append_block_children', data={'reason': res.reason,'status_code': res.status_code, 'url': res.url, 'text': res.text})
 
     data = res.json()
 
