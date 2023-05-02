@@ -71,7 +71,6 @@ def read_page_properties(page_id, property_id, headers=HEADERS):
     return data
 
 
-# DELETE THIS?
 def read_block_children(block_id, headers=HEADERS):
     """ Read child blocks of a page or block """
     url = f'https://api.notion.com/v1/blocks/{block_id}/children'

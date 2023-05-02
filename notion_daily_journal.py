@@ -35,11 +35,40 @@ headers = {
 
 
 # print(datetime.datetime.now().isoformat())
-today = datetime.date.today().isoformat()
+today = datetime.date.today() + datetime.timedelta(days=1)
+today = today.isoformat()
+# today = datetime.date.today().isoformat()
 weekday = datetime.date.today().weekday()
 
 
 ##################################################################
+
+
+def query_journal():
+    today_query_payload = {
+        "page_size": 10,
+        "filter": {
+            "property": "Date",
+            "date": {
+                "equals": today
+            }
+        }
+    }
+
+    # check if page already exists
+    today_journal = query_database_pages(database_id_journal, today_query_payload)
+
+    if not today_journal:
+        return None
+    
+    # check if page has content
+    content = read_block_children(today_journal[0]['id'])
+    if content:
+        print("Journal page already exists with content")
+        return True
+    
+    print("Blank journal page already exists")
+    return today_journal[0]
 
 
 def build_template_query_payload():
@@ -60,24 +89,6 @@ def build_template_query_payload():
             }
         }
     }
-    today_query_payload = {
-        "page_size": 10,
-        "filter": {
-            "property": "Date",
-            "date": {
-                "equals": today
-            }
-        }
-    }
-
-    # check if page already exists
-    exists = query_database_pages(database_id_journal, today_query_payload)
-
-    if exists:
-        print("Journal page already exists")
-        # today = datetime.date.today() + datetime.timedelta(days=1)
-        # today = today.isoformat()
-        return None
 
     return template_query_payload
 
@@ -87,11 +98,13 @@ def build_template_query_payload():
 def generate_journal_entry():
     """Main script to create daily journal entry."""
 
-    template_query_payload = build_template_query_payload()
-    if template_query_payload is None:
+    existing_journal_page = query_journal()
+    if existing_journal_page == True:
         return None
+    
+    template_query_payload = build_template_query_payload()
 
-    # get the template page id and read it's blocks
+    # get the template page id and read its blocks
     templatePage_id = query_database_pages(
         database_id_journal, template_query_payload)[0]['id']
     templateBlocks = read_block_children_recursive(templatePage_id, headers)
@@ -157,8 +170,13 @@ def generate_journal_entry():
         # list.insert(index, elem)
         templateBlocks.insert(1 + count, block)
 
-    # create the new page
-    newPage_id = create_page(newPageData_journal)["id"]
+    if existing_journal_page is None:
+        # create the new page
+        newPage_id = create_page(newPageData_journal)["id"]
+    else:
+        # blank journal page exists already
+        # update page properties for the blank journal page
+        newPage_id = update_page(existing_journal_page['id'], newPageData_journal)["id"]
 
     # add the template blocks to the new page (including sub_children)
     append_block_children(newPage_id, templateBlocks)
