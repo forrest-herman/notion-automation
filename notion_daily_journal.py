@@ -34,10 +34,7 @@ headers = {
 }
 
 
-# print(datetime.datetime.now().isoformat())
-today = datetime.date.today() + datetime.timedelta(days=1)
-today = today.isoformat()
-# today = datetime.date.today().isoformat()
+today = datetime.date.today().isoformat()
 weekday = datetime.date.today().weekday()
 
 
