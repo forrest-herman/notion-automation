@@ -357,22 +357,24 @@ def check_for_event_tags(events_today_info):
     tags = []
 
     for event in events_today_info:
-        if 'fencing' in event['summary'].lower():
+        event_summary = event['summary'].lower()
+
+        if 'fencing' in event_summary:
             tags.append('Fencing 🤺')
-        if 'grocery' in event['summary'].lower():
+        if 'grocery' in event_summary:
             tags.append('Groceries 🛒')
-        if 'angèle' in event['summary'].lower():
+        if 'angèle' in event_summary:
             tags.append('Angèle 💕')
-        if 'macfe' in event['summary'].lower() or 'formula' in event['summary'].lower():
+        if 'macfe' in event_summary or 'formula' in event_summary:
             tags.append('MACFE')
-        if 'wedding' in event['summary'].lower():
+        if 'wedding' in event_summary:
             tags.append('Wedding')
             tags.append('Photography 📷')
-        if 'therapy' in event['summary'].lower():
+        if 'therapy' in event_summary or 'Jennifer Rapley' in event_summary:
             tags.append('Therapy ☯')
             # add to insurance coverage tracker
             add_new_appointment('Therapy', 135)
-        if '1-on-1' in event['summary'].lower():
+        if '1-on-1' in event_summary:
             tags.append('1-on-1')
 
     return tags
