@@ -1,0 +1,36 @@
+name: learn-github-actions
+# run-name: ${{ github.actor }} is learning GitHub Actions
+on:
+  schedule:
+    - cron: '30 5 * * *' # minute hour day month weekday https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07
+jobs:
+  daily-notion-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every day
+        run: echo "This step will always run"
+      - name: Every day
+        run: echo "This step will always run"
+
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.11'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+      # You can test your matrix by printing the current Python version
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      # - name: Set up Python
+      #   uses: actions/checkout@v3
+      #   with:
+      #     python-version: 3.11
+          
+      - name: Test env vars for python
+        run: python -c 'import os;print(os.environ)'
+        env:
+          ENV_SECRET: ${{ secrets.ENV_SECRET }} 
+          REPO_SECRET: ${{ secrets.REPO_SECRET }} 
