@@ -3,6 +3,8 @@ name: learn-github-actions
 on:
   schedule:
     - cron: '30 5 * * *' # minute hour day month weekday https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07
+  push:
+    branches: [ "main" ]
 jobs:
   daily-notion-automation:
     runs-on: ubuntu-latest
