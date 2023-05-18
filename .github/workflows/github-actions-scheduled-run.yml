@@ -1,4 +1,4 @@
-name: learn-github-actions
+name: daily-notion-automation
 # run-name: ${{ github.actor }} is learning GitHub Actions
 on:
   schedule:
@@ -43,11 +43,18 @@ jobs:
       #   run: |
       #     pytest
 
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0.4.0'
+        with:
+          workload_identity_provider: 'projects/836371454349/locations/global/workloadIdentityPools/githubactions/providers/github'
+          service_account: 'github-actions@notion-calendar-journal.iam.gserviceaccount.com'
+
       - name: Run code
         run: python main.py
 
 
-
+      
       # - name: Set up Python
       #   uses: actions/checkout@v3
       #   with:
