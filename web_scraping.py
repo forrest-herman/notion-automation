@@ -1,6 +1,10 @@
 import os
 import time
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.utils import ChromeType
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 # from selenium.webdriver.common.by import By
 from utils import write_to_file
 
@@ -54,8 +58,9 @@ def get_driver_exact_location(browser_name=None):
     return os.getenv('CHROME_DRIVER_PATH')
 
 
-def build_driver(link:str=None, browser:str='edge', headless:bool=True):
-    driver_path = get_driver_exact_location(browser)
+def build_driver(link:str=None, browser:str='', headless:bool=True):
+    if browser:
+        driver_path = get_driver_exact_location(browser)
     
     # check for edge driver
     # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
@@ -71,15 +76,8 @@ def build_driver(link:str=None, browser:str='edge', headless:bool=True):
             driver = webdriver.Edge(driver_path, options=options)
             # service = Service(verbose = True)
             # driver = webdriver.Edge(service=service)
-        else:
+        elif browser == 'chrome':
             options = webdriver.ChromeOptions()
-
-            # for heroku use this:
-            # chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
-            # if chrome_bin:
-            #     options.binary_location = chrome_bin
-            #     options.add_argument("--disable-dev-shm-usage")
-            #     options.add_argument("--no-sandbox")
 
             options.add_argument('--ignore-certificate-errors')
             options.add_argument('--ignore-ssl-errors')
@@ -90,6 +88,23 @@ def build_driver(link:str=None, browser:str='edge', headless:bool=True):
             options.add_argument('--log-level=1')
 
             driver = webdriver.Chrome(executable_path=driver_path, chrome_options=options)
+        else:
+            chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+
+            chrome_options = Options()
+            options = [
+                "--headless",
+                "--disable-gpu",
+                "--window-size=%s" % WINDOW_SIZE,
+                "--ignore-certificate-errors",
+                "--disable-extensions",
+                "--no-sandbox",
+                "--disable-dev-shm-usage"
+            ]
+            for option in options:
+                chrome_options.add_argument(option)
+
+            driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     except Exception as e:
         print(f'{browser} driver not found', e)
         raise e

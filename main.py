@@ -12,7 +12,7 @@ from firestore_methods import get_firestore_document, set_last_updated, get_curr
 
 def main():
     # create a new journal page daily
-    last_updated = None # get_last_updated('notion_journal')
+    last_updated = get_last_updated('notion_journal')
     if last_updated is None or last_updated.date() != datetime.now().date():
         if generate_journal_entry():
             print("Journal entry created")

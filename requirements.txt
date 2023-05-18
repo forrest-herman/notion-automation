@@ -7,6 +7,7 @@ certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.0
 cloudinary==1.29.0
+colorama==0.4.6
 cryptography==39.0.2
 firebase-admin==6.1.0
 google-api-core==2.11.0
@@ -30,6 +31,7 @@ lxml==4.9.1
 msgpack==1.0.5
 oauthlib==3.2.2
 outcome==1.2.0
+packaging==23.1
 proto-plus==1.22.2
 protobuf==4.21.12
 pyasn1==0.4.8
@@ -49,8 +51,10 @@ six==1.16.0
 sniffio==1.2.0
 sortedcontainers==2.4.0
 soupsieve==2.3.2.post1
+tqdm==4.65.0
 trio==0.21.0
 trio-websocket==0.9.2
 uritemplate==4.1.1
 urllib3==1.26.10
+webdriver-manager==3.8.6
 wsproto==1.1.0
