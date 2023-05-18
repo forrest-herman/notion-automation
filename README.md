@@ -14,6 +14,8 @@
   - Pulls data from Goodreads and compares with my Notion Reading List
     - Updates existing entires with dates and ratings
     - Adds nonexistant books to the database
+- A set of functions for interacting with Google Firestore
+- Github Actions configuration file to run this automation on a cron schedule, including webdriver and Google Auth tasks
 
 
 ### Requirements
@@ -21,14 +23,15 @@
   - a `.env` file containing a Notion Integration `secret_key` in the form:
     - `token = 'secret_key'`
   - a `gcal_client_secret.json` file that contains the Google Auth 2.0 Client ID and Client secret for `InstalledAppFlow.from_client_secrets_file`, downloaded directly from `console.cloud.google.com/apis/credentials`
-  - These files should be stored at `project_dir/credentials/`
+  - These files should be stored at `project_dir/credentials/` or stored in Github secret
 
 ### Work in Progress
 - [x] Add calendar integration for events
 - [x] Add proper tags based on template
 - [x] Goodreads web scraper integration for my reading list
 - [ ] Add testing suite
-- [ ] Integrate Cloud Firestore as storage for user_data and logs
+- [ ] Host online to run automatically on schedule
+- [x] Integrate Cloud Firestore as storage for user_data and logs
   - [x] Create daily-automations Firebase account
-  - [ ] Add write and read scripts for ease of use
-  - [ ] Integrate into existing scripts
+  - [x] Add write and read scripts for ease of use
+  - [x] Integrate into existing scripts
