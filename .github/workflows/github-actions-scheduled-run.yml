@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
 jobs:
   daily-notion-automation:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: ubuntu-latest
     steps:
       - name: view the secrets context
