@@ -12,13 +12,6 @@ jobs:
       id-token: 'write'
     runs-on: ubuntu-latest
     steps:
-      - name: view the secrets context
-        shell: bash
-        run: echo "$SECRETS_CONTEXT"
-        env:
-          SECRETS_CONTEXT: ${{ toJson(secrets) }}
-      - name: Every day
-        run: echo "This step will always run"
       - uses: actions/checkout@v3
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
