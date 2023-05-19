@@ -30,7 +30,7 @@
 - [x] Add proper tags based on template
 - [x] Goodreads web scraper integration for my reading list
 - [ ] Add testing suite
-- [ ] Host online to run automatically on schedule
+- [x] Host online to run automatically on schedule
 - [x] Integrate Cloud Firestore as storage for user_data and logs
   - [x] Create daily-automations Firebase account
   - [x] Add write and read scripts for ease of use
