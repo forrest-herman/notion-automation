@@ -1,12 +1,9 @@
 from datetime import datetime, timedelta
-from json import JSONDecodeError
-import os
 
 from notion_daily_journal import generate_journal_entry
 from track_games_methods import update_games_list
 import notion_reading_list_update
 import goodreads
-from utils import save_json_to_file, read_json_from_file
 from firestore_methods import get_firestore_document, set_last_updated, get_current_books_from_store, add_current_book_to_store, get_last_updated
 
 
