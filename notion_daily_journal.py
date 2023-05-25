@@ -34,6 +34,8 @@ headers = {
 }
 
 
+# today = datetime.date.today() + datetime.timedelta(days=1)
+# today = today.isoformat()
 today = datetime.date.today().isoformat()
 weekday = datetime.date.today().weekday()
 
@@ -347,7 +349,7 @@ def update_journal_page_properties(newPage_id, new_properties_dict):
 
 
 def check_for_event_tags(events_today_info):
-    # TODO: get list of Journal tags from Notion
+    # TODO: get list of Journal tags from Notion get_all_journal_tags()
     # TODO: Loop through and check if any of the events today match the tags using regex
     # tag_short = re.search(r'([a-Z]+)', tag.lower())
     # if tag_short in event['summary'].lower()

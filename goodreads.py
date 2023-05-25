@@ -39,7 +39,9 @@ def get_rating_from_text(rating_text):
 
 def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     html_str = get_html_using_selenium(url)
+    # TODO: split into 2 functions ---------------
     soup = BeautifulSoup(html_str, 'lxml')
+
 
     # get the progress percentage for all currently reading books
     books_progress_html = soup.find_all(class_='graphContainer progressGraph')
@@ -60,7 +62,7 @@ def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     return books_progress # dict of book titles and their progress
 
 
-def get_books_list_data_from_html(html_str):
+def get_books_list_data_from_html(html_str) -> list:
     """Check the My Books Feed and parse for all the books details. Such as read dates and author."""
     soup = BeautifulSoup(html_str, 'lxml')
 
@@ -101,7 +103,7 @@ def get_books_list_data_from_html(html_str):
         td = tr.find_all('td', {'class': 'field title'})[0]
         a_link = td.find_all('a')[0]
         # full_title = a_link.get('title')
-        title = a_link.find(text=True, recursive=False).strip()
+        title = a_link.find(string=True, recursive=False).strip()
         series = a_link.find('span', {'class': 'darkGreyText'})
         if series:
             series = series.text.strip(" ()")
@@ -118,7 +120,7 @@ def get_books_list_data_from_html(html_str):
             continue
 
         # capture the last name and first name
-        name_regex = re.search("(.*),\s(.*)", last_comma_first)
+        name_regex = re.search(r"(.*),\s(.*)", last_comma_first)
         author_full_name = name_regex.group(2) + " " + name_regex.group(1)
         book_dict['author_name'] = author_full_name
         book_dict['author_url'] = a_link.get('href')
@@ -227,28 +229,6 @@ def get_book_details_from_url(book_url):
 
     # parse the html string for the book details
     soup = BeautifulSoup(html_str, 'lxml')
-
-    ## old goodreads page structure ##
-    """ 
-    publication_html = soup.find_all(
-        'div',
-        {'id': 'details'}
-    )[0].find_all('div', {'class': 'row'})[1]
-    publication_date = re.search(r'Published\s+(.*)\s+', publication_html.text.strip()).group(1) 
-
-
-    numberOfPages_html = soup.find_all('span', {'itemprop': 'numberOfPages'})[0]
-    page_count = re.search(r'\d+', numberOfPages_html.text).group()
-    page_count = int(page_count)
-
-    genres_list_html = soup.find_all('a', {'class': 'actionLinkLite bookPageGenreLink'})
-    genres = [genre.text for genre in genres_list_html]
-    genres = set(genres)  # use set to remove duplicates
-    if "Audiobook" in genres:
-        genres.remove("Audiobook")
-    """
-
-    # new goodreads page structure
 
     featured_details = soup.find_all('div', {'class': 'FeaturedDetails'})[0].find_all('p') # contains pub date and number of pages
 
