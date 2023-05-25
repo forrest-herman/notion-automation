@@ -17,6 +17,7 @@ def format_playtime_hrs(playtime_mins):
 
 
 def get_last_played(game):
+    """Returns a datetime object converted from timestamp in seconds since epoch"""
     timestamp = game.get('rtime_last_played', 0)
     if timestamp == 0:
         return None
