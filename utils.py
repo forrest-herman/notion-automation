@@ -20,9 +20,18 @@ def read_json_from_file(file_name='data.json'):
     return data
 
 
-def write_to_file(data, file_name='data.txt'):
-    with open(file_name, 'w', encoding='utf8') as f:
-        f.write(data)
+def write_to_file(data, file='data.txt', current_working_dir=os.getcwd()):
+    try:
+        with open(file, 'w', encoding='utf8') as f:
+            f.write(data)
+    except FileNotFoundError:
+        create_path_to_file(file, current_working_dir)
+
+
+def read_from_file(file_name='data.txt'):
+    with open(file_name, 'r', encoding='utf8') as f:
+        data = f.read()
+    return data
 
 
 def create_path_to_file(file_path, working_dir=os.getcwd()):
@@ -38,7 +47,7 @@ def create_path_to_file(file_path, working_dir=os.getcwd()):
         os.mkdir(working_dir)
 
 
-def get_12hr_time_format_for_os(os_name):
+def get_12hr_time_format_for_os(os_name=None):
     if os_name == 'Windows_NT':
         return "%#I:%M %p"
     else:
