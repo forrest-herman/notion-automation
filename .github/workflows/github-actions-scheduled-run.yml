@@ -20,6 +20,12 @@ jobs:
           python-version: '3.11'
           # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
+      - name: Configure Local Timezone
+        if: ${{ vars.LOCAL_TIMEZONE }} 
+        uses: szenius/set-timezone@v1.2
+        with:
+          timezoneLinux: ${{ vars.LOCAL_TIMEZONE }}
+          timezoneMacos: ${{ vars.LOCAL_TIMEZONE }} 
       - uses: oNaiPs/secrets-to-env-action@v1
         with:
           secrets: ${{ toJSON(secrets) }}
