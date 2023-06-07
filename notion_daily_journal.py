@@ -43,7 +43,7 @@ weekday = datetime.date.today().weekday()
 ##################################################################
 
 
-def query_journal():
+def query_journal() -> tuple[dict, dict]:
     today_query_payload = {
         "page_size": 10,
         "filter": {
@@ -58,16 +58,16 @@ def query_journal():
     today_journal = query_database_pages(database_id_journal, today_query_payload)
 
     if not today_journal:
-        return None
+        return None, None
     
     # check if page has content
     content = read_block_children(today_journal[0]['id'])
     if content:
         print("Journal page already exists with content")
-        return True
+        return today_journal[0], content
     
     print("Blank journal page already exists")
-    return today_journal[0]
+    return today_journal[0], None
 
 
 def build_template_query_payload():
@@ -97,9 +97,9 @@ def build_template_query_payload():
 def generate_journal_entry():
     """Main script to create daily journal entry."""
 
-    existing_journal_page = query_journal()
-    if existing_journal_page == True:
-        return None
+    existing_journal_page, existing_journal_content = query_journal()
+    # if existing_journal_page.get('content') is not None:
+    #     return None
     
     template_query_payload = build_template_query_payload()
 
@@ -172,10 +172,19 @@ def generate_journal_entry():
     if existing_journal_page is None:
         # create the new page
         newPage_id = create_page(newPageData_journal)["id"]
-    else:
+    elif existing_journal_content is None:
         # blank journal page exists already
         # update page properties for the blank journal page
         newPage_id = update_page(existing_journal_page['id'], newPageData_journal)["id"]
+    else:
+        # ensure properties are correct
+        existing_page_tags = existing_journal_page['properties']['Tags']['multi_select']
+        template_tags_l = [t['name'] for t in newPage_tags['multi_select']] # list of tags in template
+        for tag in existing_page_tags:
+            if tag['name'] not in template_tags_l:
+                newPageData_journal["properties"]["Tags"]['multi_select'].append(tag) 
+        update_page(existing_journal_page['id'], newPageData_journal)["id"]
+        return None # page already exists with content
 
     # add the template blocks to the new page (including sub_children)
     append_block_children(newPage_id, templateBlocks)
@@ -372,7 +381,7 @@ def check_for_event_tags(events_today_info):
         if 'wedding' in event_summary:
             tags.append('Wedding')
             tags.append('Photography 📷')
-        if 'therapy' in event_summary or 'Jennifer Rapley' in event_summary:
+        if 'therapy' in event_summary or 'jennifer rapley' in event_summary:
             tags.append('Therapy ☯')
             # add to insurance coverage tracker
             add_new_appointment('Therapy', 135)
