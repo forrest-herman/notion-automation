@@ -381,10 +381,18 @@ def check_for_event_tags(events_today_info):
         if 'wedding' in event_summary:
             tags.append('Wedding')
             tags.append('Photography 📷')
-        if 'therapy' in event_summary or 'jennifer rapley' in event_summary:
+        if 'jennifer rapley' in event_summary:
             tags.append('Therapy ☯')
             # add to insurance coverage tracker
-            add_new_appointment('Therapy', 135)
+            add_new_appointment('Therapy', cost=135, emoji='☯')
+        if 'dentist' in event_summary:
+            tags.append('Dentist 🦷')
+            # add to insurance coverage tracker
+            add_new_appointment('Dentist')
+        if 'physio' in event_summary:
+            tags.append('Physio 🦵')
+            # add to insurance coverage tracker
+            add_new_appointment('Physiotherapy', 65)
         if '1-on-1' in event_summary:
             tags.append('1-on-1')
 

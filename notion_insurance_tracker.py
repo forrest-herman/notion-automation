@@ -111,7 +111,7 @@ def get_latest_pivot_table_year(date, type) -> str:
     return pivot_page_id
 
 
-def add_new_appointment(type, cost, date=None, emoji=''):
+def add_new_appointment(type, cost=None, date=None, emoji=''):
     """Add a new appointment to the database"""
 
     if date is None:
