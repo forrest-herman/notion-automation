@@ -87,7 +87,7 @@ def get_latest_pivot_table_year(date, type) -> str:
                         "name": type
                     }
                 },
-                "Name": {
+                "ID": {
                     "title": [
                         {
                             "text": {
