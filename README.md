@@ -19,9 +19,11 @@
 
 
 ### Requirements
-- This code requires some configuration files to work:
-  - a `.env` file containing a Notion Integration `secret_key` in the form:
-    - `token = 'secret_key'`
+- This code requires some configuration files and variables to work:
+  - a `.env` file containing:
+    -  a Notion Integration `secret_key` in the form:
+       - `NOTION_TOKEN = 'secret_key'`
+ - Github Secret `TIMEZONE` key with your local timezone string of the form `America/New_York`
   - a `gcal_client_secret.json` file that contains the Google Auth 2.0 Client ID and Client secret for `InstalledAppFlow.from_client_secrets_file`, downloaded directly from `console.cloud.google.com/apis/credentials`
   - These files should be stored at `project_dir/credentials/` or stored in Github secret
 
