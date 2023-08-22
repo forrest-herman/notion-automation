@@ -2,7 +2,7 @@ import os
 import time
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.core.utils import ChromeType
+
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 # from selenium.webdriver.common.by import By
@@ -89,7 +89,7 @@ def build_driver(link:str=None, browser:str='', headless:bool=True):
 
             driver = webdriver.Chrome(executable_path=driver_path, chrome_options=options)
         else:
-            chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+            chrome_service = Service(ChromeDriverManager().install())
 
             chrome_options = Options()
             options = [
