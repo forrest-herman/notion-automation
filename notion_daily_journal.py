@@ -391,11 +391,19 @@ def check_for_event_tags(events_today_info):
         if 'dentist' in event_summary:
             tags.append('Dentist 🦷')
             # add to insurance coverage tracker
-            add_new_appointment('Dentist')
+            add_new_appointment('Dentist', emoji='🦷')
         if 'physio' in event_summary:
             tags.append('Physio 🦵')
             # add to insurance coverage tracker
-            add_new_appointment('Physiotherapy', 65)
+            add_new_appointment('Physiotherapy', emoji='🦵')
+        if 'chiro' in event_summary:
+            tags.append('Chiropractor')
+            # add to insurance coverage tracker
+            add_new_appointment('Chiropractor', emoji='💆')
+        if 'massage' in event_summary:
+            tags.append('Massage')
+            # add to insurance coverage tracker
+            add_new_appointment('Massage', emoji='💆')
         if '1-on-1' in event_summary:
             tags.append('1-on-1')
 

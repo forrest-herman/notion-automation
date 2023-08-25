@@ -162,7 +162,7 @@ def add_new_appointment(type, cost=None, date=None, emoji=''):
         },
         "icon": {
             "type": "emoji",
-            "emoji": "☯"
+            "emoji": emoji
         } if emoji else None
     }
 
