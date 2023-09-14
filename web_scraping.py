@@ -110,8 +110,7 @@ def build_driver(link:str=None, browser:str='', headless:bool=True):
             # chromedriver_autoinstaller.install()  # Check if the current version of chromedriver exists
                                                 # and if it doesn't exist, download it automatically,
                                                 # then add chromedriver to path
-
-            driver = webdriver.Chrome()
+            # driver = webdriver.Chrome()
 
             # Method 2: Use webdriver_manager
             chrome_service = Service(ChromeDriverManager().install())
