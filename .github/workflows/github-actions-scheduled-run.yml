@@ -63,7 +63,7 @@ jobs:
       - name: Remove default Chromium
         run: sudo apt purge chromium-browser
       - name: Install a new Chromium
-        run: sudo apt install -y chromium-browser=114.0.5735.90
+        run: sudo apt install -y chromium-browser
 
 
       - id: 'auth'
