@@ -2,7 +2,7 @@ import os
 import time
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
-import chromedriver_autoinstaller
+# import chromedriver_autoinstaller
 
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -107,16 +107,16 @@ def build_driver(link:str=None, browser:str='', headless:bool=True):
 
 
             # Method 1: Install chromedriver using chromedriver-autoinstaller
-            chromedriver_autoinstaller.install()  # Check if the current version of chromedriver exists
+            # chromedriver_autoinstaller.install()  # Check if the current version of chromedriver exists
                                                 # and if it doesn't exist, download it automatically,
                                                 # then add chromedriver to path
 
             driver = webdriver.Chrome()
 
             # Method 2: Use webdriver_manager
-            # chrome_service = Service(ChromeDriverManager().install())
+            chrome_service = Service(ChromeDriverManager().install())
 
-            # driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+            driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     except Exception as e:
         print(f'{browser} driver not found', e)
         raise e
