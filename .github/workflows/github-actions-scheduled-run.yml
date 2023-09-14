@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -20,12 +21,14 @@ jobs:
           python-version: '3.11'
           # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
+          
       - name: Configure Local Timezone
         if: ${{ vars.LOCAL_TIMEZONE }} 
         uses: szenius/set-timezone@v1.2
         with:
           timezoneLinux: ${{ vars.LOCAL_TIMEZONE }}
           timezoneMacos: ${{ vars.LOCAL_TIMEZONE }} 
+
       - uses: oNaiPs/secrets-to-env-action@v1
         with:
           secrets: ${{ toJSON(secrets) }}
@@ -60,15 +63,22 @@ jobs:
       - name: Remove default Chromium
         run: sudo apt purge chromium-browser
       - name: Install a new Chromium
-        run: sudo apt install -y chromium-browser
+        run: sudo apt install -y chromium-browser=114.0.5735.90
 
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.4.0'
         with:
+          token_format: 'access_token' 
           workload_identity_provider: 'projects/973237400148/locations/global/workloadIdentityPools/githubactions/providers/github'
           service_account: 'github-actions@daily-automations.iam.gserviceaccount.com'
+          access_token_lifetime: '3600s' # optional
+
+      - id: 'access-secret'
+        run: |
+          curl https://secretmanager.googleapis.com/v1/projects/my-project/secrets/my-secret/versions/1:access \
+            --header "Authorization: Bearer ${{ steps.auth.outputs.access_token }}"
 
       - name: Run code
         run: python main.py
