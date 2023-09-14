@@ -387,7 +387,7 @@ def check_for_event_tags(events_today_info):
         if 'jennifer rapley' in event_summary:
             tags.append('Therapy ☯')
             # add to insurance coverage tracker
-            add_new_appointment('Therapy', cost=135, emoji='☯')
+            add_new_appointment('Therapy', cost=140, emoji='☯')
         if 'dentist' in event_summary:
             tags.append('Dentist 🦷')
             # add to insurance coverage tracker
