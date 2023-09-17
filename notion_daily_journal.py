@@ -375,6 +375,8 @@ def check_for_event_tags(events_today_info):
 
         if 'fencing' in event_summary:
             tags.append('Fencing 🤺')
+        if 'frisbee' in event_summary:
+            tags.append('Frisbee')
         if 'grocery' in event_summary:
             tags.append('Groceries 🛒')
         if 'angèle' in event_summary:
