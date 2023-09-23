@@ -30,12 +30,11 @@ def main():
                 book['progress'] = progress
             else:
                 print(f"Progress for {book['title']} not found")
-                book['progress'] = None
 
             firestore_book_key = f"{book['title']}, {book['author_name']}"
             firestore_book = prev_curr_books.get(firestore_book_key, None)
             # check if the book progress has changed
-            if not firestore_book or firestore_book.get('progress', None) != book['progress']:
+            if not firestore_book or firestore_book.get('progress') != book.get('progress'):
                 add_current_book_to_store(book)
                 print(f"Book {book['title']} has been updated on Firestore")
             prev_curr_books.pop(firestore_book_key, '') # remove the old book from store if it exists
