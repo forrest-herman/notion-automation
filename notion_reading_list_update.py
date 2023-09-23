@@ -356,7 +356,7 @@ def update_read_date(page_to_update_id, book_details):
                 ] if book_details['date_read'] else []
             },
             "Progress": {
-                "number": int(book_details.get("progress", 100)) / 100
+                "number": int(book_details.get("progress", 0)) / 100
             }
         }
     }
