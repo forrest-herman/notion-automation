@@ -213,7 +213,7 @@ def create_notion_game_page(game, last_played=None, start_play=None):
                     "time_zone": "America/New_York"
                 } if last_played else None
             },
-            "Dates Played": {
+            "First Played": {
                 "date": {
                     "start": start_play.date().isoformat(),
                 } if start_play else None
