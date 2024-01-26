@@ -280,7 +280,7 @@ def update_games_list():
                 continue
 
             achievements = get_user_achievements_for_game(STEAM_ID, game['appid'])
-            achievements = achievements['playerstats'].get('achievements', None)
+            achievements = achievements.get('playerstats').get('achievements', None)
 
             update_notion_game_page(game, game_page, achievements)
 

@@ -1,5 +1,5 @@
 import pytest
-from track_games_methods import *
+from tracking_games.track_games_methods import *
 
 
 def test_format_playtime():
