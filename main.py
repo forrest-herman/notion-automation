@@ -39,12 +39,14 @@ def main():
                 print(f"Book {book['title']} has been updated on Firestore")
             prev_curr_books.pop(firestore_book_key, '') # remove the old book from store if it exists
 
-        for _key, book in prev_curr_books.items():
-            if book.get('progress', 0) == 100:
+        for _key, fire_book in prev_curr_books.items():
+            if fire_book.get('progress', 0) == 100 and fire_book.get('date_read'):
                 continue # book has already been marked as 100% on Firestore
-            book['progress'] = 100 # the book has been finished
-            add_current_book_to_store(book)
-            print(f"Book {book['title']} updated on Firestore to 100%")
+            fire_book['progress'] = 100 # the book has been finished
+            goodreads_book_details = next((book for book in books_read if book["title"] == fire_book['title']), None)
+            fire_book['date_read'] = goodreads_book_details.get('date_read', None)
+            add_current_book_to_store(fire_book) # TODO: this should add book to finished reading store
+            print(f"Book {fire_book['title']} updated on Firestore to 100%")
             
         notion_reading_list_update.update_reading_list(books_read, currently_reading)
         set_last_updated('notion_readingList') # add a log that it was successfully updated

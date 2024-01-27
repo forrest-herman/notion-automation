@@ -2,10 +2,13 @@ import os
 import time
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 # import chromedriver_autoinstaller
 
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.edge.service import Service as EdgeService
 # from selenium.webdriver.common.by import By
 from utils import write_to_file
 
@@ -34,10 +37,10 @@ WINDOW_SIZE = "1200,1200"
 def get_driver_exact_location(browser_name=None):
     if OS_NAME:
         if OS_NAME == 'Windows_NT':
-            if browser_name == 'chrome':
-                driver_path = 'chrome_drivers/chromedriver_win32/chromedriver.exe'
-            else:
+            if browser_name == 'edge':
                 driver_path = 'edge_drivers/edgedriver_win64/msedgedriver.exe'
+            else:
+                driver_path = 'chrome_drivers/chromedriver_win32/chromedriver.exe'
         elif OS_NAME == 'Linux':
             driver_path = 'chrome_drivers/chromedriver_linux64/chromedriver'
         elif OS_NAME == 'MacOS':
@@ -66,17 +69,21 @@ def build_driver(link:str=None, browser:str='', headless:bool=True):
     # check for edge driver
     # docs: https://learn.microsoft.com/en-us/microsoft-edge/webdriver-chromium/?tabs=c-sharp
     try:
-        if browser == 'edge':
-            options = webdriver.EdgeOptions()
-            options.add_argument('inprivate')
-            options.add_argument('--log-level=3')
-            options.add_argument("--window-size=%s" % WINDOW_SIZE)
-            if headless:
-                options.add_argument("--headless")
+        if browser == 'edge' or OS_NAME == 'Windows_NT':
+            # install and setup chromedriver
 
-            driver = webdriver.Edge(driver_path, options=options)
-            # service = Service(verbose = True)
-            # driver = webdriver.Edge(service=service)
+            edge_options = EdgeOptions()
+            options = [
+                "inprivate",
+                "--window-size=%s" % WINDOW_SIZE,
+                "--log-level=3"
+            ]
+            if headless:
+                options.append("--headless")
+            for option in options:
+                edge_options.add_argument(option)
+
+            driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=edge_options)
         elif browser == 'chrome':
             options = webdriver.ChromeOptions()
 
@@ -105,17 +112,7 @@ def build_driver(link:str=None, browser:str='', headless:bool=True):
             for option in options:
                 chrome_options.add_argument(option)
 
-
-            # Method 1: Install chromedriver using chromedriver-autoinstaller
-            # chromedriver_autoinstaller.install()  # Check if the current version of chromedriver exists
-                                                # and if it doesn't exist, download it automatically,
-                                                # then add chromedriver to path
-            # driver = webdriver.Chrome()
-
-            # Method 2: Use webdriver_manager
-            chrome_service = Service(ChromeDriverManager().install())
-
-            driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     except Exception as e:
         print(f'{browser} driver not found', e)
         raise e
