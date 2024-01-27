@@ -114,7 +114,8 @@ def log_error(title: str, error='', location: str = "", data: dict = {}):
         'title': title,
         'error': str(error),
         'location': location,
-        'data': data
+        'data': data,
+        'timestamp': timestamp
     }
     set_firestore_document(f'errors/{timestamp}', data)
 
