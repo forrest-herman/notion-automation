@@ -220,10 +220,35 @@ def get_book_details_from_url(book_url):
             location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
             data={'book_url': book_url}
         )
-    # if that's not it, maybe it's a goodreads login popup
-    # popup_close_btn = driver.find_element(By.CSS_SELECTOR,
-    #   "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button__container"
-    # )
+    except Exception as e:
+        html_str = get_html_using_selenium(driver=driver)
+        log_error(
+            title='Error clicking show more genres button',
+            error=e,
+            location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
+            data={'book_url': book_url, 'html': html_str}
+        )
+        try: 
+            # if that's not it, maybe it's a goodreads login popup
+            popup_close_btn = driver.find_element(By.CSS_SELECTOR,
+            "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button"
+            )
+            popup_close_btn.click()
+
+            # try again
+            title_elem = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+            )
+            show_more_genres_button = driver.find_element(
+                By.CSS_SELECTOR,
+                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+            )
+            show_more_genres_button.click()
+            
+            print("successfully closed popup finally!")
+        except:
+            pass
+
 
     html_str = get_html_using_selenium(driver=driver)
 
