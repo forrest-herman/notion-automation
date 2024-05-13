@@ -78,9 +78,6 @@ def build_template_query_payload():
     else:
         pageName = "Daily Summary Template"
 
-    # OVERWRITE 
-    pageName = "Daily Summary Template"
-
     # prepare a payload to query the database
     template_query_payload = {
         "page_size": 10,
