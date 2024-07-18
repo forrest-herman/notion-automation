@@ -66,7 +66,16 @@ def get_books_list_data_from_html(html_str) -> list:
     """Check the My Books Feed and parse for all the books details. Such as read dates and author."""
     soup = BeautifulSoup(html_str, 'lxml')
 
-    table = soup.find_all('table', {'id': 'books'})[0]
+    try:
+        table = soup.find_all('table', {'id': 'books'})[0]
+    except IndexError as e:
+        log_error(
+            title='Error finding table of books',
+            error=e,
+            location='get_read_and_reading, get_books_list_data_from_html', 
+            data={'html_str': html_str, 'soup': soup}
+        )
+        return []
     table_rows = table.find_all('tr')
     book_list = []
 
@@ -188,7 +197,7 @@ def get_book_details_from_url(book_url):
         )
         show_more_genres_button = driver.find_element(
             By.CSS_SELECTOR,
-            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem"
         )
         show_more_genres_button.click()
     except TimeoutException:
@@ -200,7 +209,7 @@ def get_book_details_from_url(book_url):
             )
             show_more_genres_button = driver.find_element(
                 By.CSS_SELECTOR,
-                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem"
             )
             show_more_genres_button.click()
         except TimeoutException:
