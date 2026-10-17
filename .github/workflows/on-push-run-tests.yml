@@ -1,0 +1,38 @@
+name: PR Push CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    # Optional: explicitly state the activity types. By default, it includes opened, reopened, and synchronize (push to PR).
+    types: [ opened, synchronize, reopened ]
+
+# Prevent resource waste by canceling older runs of this workflow on the same PR if a new push happens
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+  
+jobs:
+  run-tests:
+    name: Run CI Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the pull request's source branch code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up your runtime environment
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.11'
+
+      # Step 3: Install project dependencies
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      # Step 4: Run your code linters, formatters, or tests
+      - name: Test with pytest
+        run: pytest

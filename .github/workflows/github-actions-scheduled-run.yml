@@ -5,6 +5,9 @@ on:
     - cron: '30 5 * * *' # minute hour day month weekday https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07
   push:
     branches: [ "main" ]
+  pull_request:
+    # Optional: explicitly state the activity types. By default, it includes opened, reopened, and synchronize (push to PR).
+    types: [ opened, synchronize, reopened ]
 jobs:
   daily-notion-automation:
     permissions:
