@@ -1,34 +1,33 @@
-import re
 import datetime
-import time
-from utils import write_to_file
-from utils import save_json_to_file
+import re
+
 from bs4 import BeautifulSoup
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    NoSuchElementException,
+    TimeoutException,
+)
+
 # BeautifulSoup is a python library to scrap data from web pages.
-
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementClickInterceptedException
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
-from web_scraping import get_html_using_selenium, build_driver
 from firestore_methods import log_error
+from web_scraping import build_driver, get_html_using_selenium
 
-
-URL_HOMEPAGE = 'https://www.goodreads.com/user/show/58061822-forrest-herman'
-URL_BOOKS_READ = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read'
-URL_CURRENTLY_READING = 'https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=currently-reading'
-
-OUTPUT_MD_FILE_PATH = 'markdown_file.md'
+URL_HOMEPAGE = "https://www.goodreads.com/user/show/58061822-forrest-herman"
+URL_BOOKS_READ = "https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read"
+URL_CURRENTLY_READING = "https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=currently-reading"
 
 
 def get_rating_from_text(rating_text):
     rating_dict = {
-        'did not like it': '1',
-        'it was ok': '2',
-        'liked it': '3',
-        'really liked it': '4',
-        'it was amazing': '5'
+        "did not like it": "1",
+        "it was ok": "2",
+        "liked it": "3",
+        "really liked it": "4",
+        "it was amazing": "5",
     }
     try:
         rating = rating_dict[rating_text]
@@ -40,43 +39,42 @@ def get_rating_from_text(rating_text):
 def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     html_str = get_html_using_selenium(url)
     # TODO: split into 2 functions ---------------
-    soup = BeautifulSoup(html_str, 'lxml')
-
+    soup = BeautifulSoup(html_str, "lxml")
 
     # get the progress percentage for all currently reading books
-    books_progress_html = soup.find_all(class_='graphContainer progressGraph')
+    books_progress_html = soup.find_all(class_="graphContainer progressGraph")
     books_progress = {}
     for progress_html in books_progress_html:
-        progress = progress_html.find(class_='graphBar').get('style')
-        progress = re.search(r'width: (\d+)%', progress).group(1)
-        progress = int(progress) # cast str to number
+        progress = progress_html.find(class_="graphBar").get("style")
+        progress = re.search(r"width: (\d+)%", progress).group(1)
+        progress = int(progress)  # cast str to number
 
-        title = progress_html.parent.parent.find('a', class_='bookTitle').text
+        title = progress_html.parent.parent.find("a", class_="bookTitle").text
         # format the title
-        title = re.search(r'^(.+?)(\s\(.*\))?$', title).group(1)
+        title = re.search(r"^(.+?)(\s\(.*\))?$", title).group(1)
         # ensure we have the highest percentage for the book
-        books_progress[title] = progress if progress > books_progress.get(title, 0) else books_progress.get(title, 0)
+        books_progress[title] = max(books_progress.get(title, 0), progress)
 
     if book_title and progress:
         return progress  # current progress percentage
-    return books_progress # dict of book titles and their progress
+    return books_progress  # dict of book titles and their progress
 
 
 def get_books_list_data_from_html(html_str) -> list:
     """Check the My Books Feed and parse for all the books details. Such as read dates and author."""
-    soup = BeautifulSoup(html_str, 'lxml')
+    soup = BeautifulSoup(html_str, "lxml")
 
     try:
-        table = soup.find_all('table', {'id': 'books'})[0]
+        table = soup.find_all("table", {"id": "books"})[0]
     except IndexError as e:
         log_error(
-            title='Error finding table of books',
+            title="Error finding table of books",
             error=e,
-            location='get_read_and_reading, get_books_list_data_from_html', 
-            data={'html_str': html_str, 'soup': soup}
+            location="get_read_and_reading, get_books_list_data_from_html",
+            data={"html_str": html_str, "soup": soup},
         )
         return []
-    table_rows = table.find_all('tr')
+    table_rows = table.find_all("tr")
     book_list = []
 
     for tr in table_rows[1:]:
@@ -99,76 +97,78 @@ def get_books_list_data_from_html(html_str) -> list:
         """
 
         # parse cover_url
-        td = tr.find_all('td', {'class': 'field cover'})[0]
-        img = td.find_all('img')[0]
-        book_dict['cover_url'] = img['src']
+        td = tr.find_all("td", {"class": "field cover"})[0]
+        img = td.find_all("img")[0]
+        book_dict["cover_url"] = img["src"]
         # get higher resolution cover
-        book_dict['cover_url'] = book_dict['cover_url'].replace(
-            '_SX50_.', '').replace('_SY75_.', '')
+        book_dict["cover_url"] = (
+            book_dict["cover_url"].replace("_SX50_.", "").replace("_SY75_.", "")
+        )
         # REXEG alternative
         # book_dict['cover_url'] = re.sub(r'_[a-zA-Z0-9]+_.', '', book_dict['cover_url'])
 
         # parse title, series, and book's url
-        td = tr.find_all('td', {'class': 'field title'})[0]
-        a_link = td.find_all('a')[0]
+        td = tr.find_all("td", {"class": "field title"})[0]
+        a_link = td.find_all("a")[0]
         # full_title = a_link.get('title')
         title = a_link.find(string=True, recursive=False).strip()
-        series = a_link.find('span', {'class': 'darkGreyText'})
+        series = a_link.find("span", {"class": "darkGreyText"})
         if series:
             series = series.text.strip(" ()")
-        book_dict['title'] = title
-        book_dict['series'] = series
-        book_dict['book_url'] = a_link.get('href')
+        book_dict["title"] = title
+        book_dict["series"] = series
+        book_dict["book_url"] = a_link.get("href")
 
         # parse author and author_url
-        td = tr.find_all('td', {'class': 'field author'})[0]
-        a_link = td.find_all('a')[0]
+        td = tr.find_all("td", {"class": "field author"})[0]
+        a_link = td.find_all("a")[0]
         last_comma_first = a_link.text
 
-        if last_comma_first == 'NOT A BOOK':
+        if last_comma_first == "NOT A BOOK":
             continue
 
         # capture the last name and first name
         name_regex = re.search(r"(.*),\s(.*)", last_comma_first)
         author_full_name = name_regex.group(2) + " " + name_regex.group(1)
-        book_dict['author_name'] = author_full_name
-        book_dict['author_url'] = a_link.get('href')
+        book_dict["author_name"] = author_full_name
+        book_dict["author_url"] = a_link.get("href")
 
         # parse rating
-        td = tr.find_all('td', {'class': 'field rating'})[0]
-        span = td.find_all('span', {'class': 'staticStars notranslate'})[0]
-        rating_text = span.get('title')
+        td = tr.find_all("td", {"class": "field rating"})[0]
+        # TODO: goodreads updated their ratings and now there's a div with `data-rating="4.25"`.
+        span = td.find_all("span", {"class": "staticStars notranslate"})[0]
+        rating_text = span.get("title")
         rating = get_rating_from_text(rating_text)
-        book_dict['rating'] = rating
+        book_dict["rating"] = rating
 
         # parse review
-        review = ''
-        td = tr.find_all('td', {'class': 'field review'})
-        if(len(td) > 0):
+        review = ""
+        td = tr.find_all("td", {"class": "field review"})
+        if len(td) > 0:
             td = td[0]
-            span = td.find_all('span')
-            if(len(span) > 0):
+            span = td.find_all("span")
+            if len(span) > 0:
                 span = span[-1]
                 lines = [str(i) for i in span.contents]
-                review = ' '.join(lines)
-        book_dict['review'] = review
+                review = " ".join(lines)
+        book_dict["review"] = review
 
         # parse date_started
-        td = tr.find_all('td', {'class': 'field date_started'})[0]
-        span = td.find_all('span', {'class': 'date_started_value'})
+        td = tr.find_all("td", {"class": "field date_started"})[0]
+        span = td.find_all("span", {"class": "date_started_value"})
         dates_started = []
         for date_html in span:
             date_started = date_html.text
             dates_started.append(convert_date_to_isoformat(date_started))
-        book_dict['date_started'] = max(dates_started) if dates_started else None
+        book_dict["date_started"] = max(dates_started) if dates_started else None
         # store number of dates started to confirm # of dates finished
         reads = len(dates_started)
 
         # parse date_read
-        td = tr.find_all('td', {'class': 'field date_read'})[0]
+        td = tr.find_all("td", {"class": "field date_read"})[0]
         dates_finished = []
         try:
-            span = td.find_all('span', {'class': 'date_read_value'})
+            span = td.find_all("span", {"class": "date_read_value"})
             for date_html in span:
                 date_read = date_html.text
                 dates_finished.append(convert_date_to_isoformat(date_read))
@@ -176,9 +176,9 @@ def get_books_list_data_from_html(html_str) -> list:
             dates_finished = []  # no date finished
 
         if len(dates_finished) < reads:
-            book_dict['date_read'] = None  # not finished
+            book_dict["date_read"] = None  # not finished
         else:
-            book_dict['date_read'] = max(dates_finished)
+            book_dict["date_read"] = max(dates_finished)
 
         book_list.append(book_dict)
 
@@ -193,11 +193,11 @@ def get_book_details_from_url(book_url):
     # click the show more genres button
     try:
         title_elem = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
         )
         show_more_genres_button = driver.find_element(
             By.CSS_SELECTOR,
-            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem"
+            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem",
         )
         show_more_genres_button.click()
     except TimeoutException:
@@ -205,11 +205,11 @@ def get_book_details_from_url(book_url):
         driver.refresh()
         try:
             WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+                EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
             )
             show_more_genres_button = driver.find_element(
                 By.CSS_SELECTOR,
-                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem"
+                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem",
             )
             show_more_genres_button.click()
         except TimeoutException:
@@ -217,80 +217,85 @@ def get_book_details_from_url(book_url):
         except (NoSuchElementException, ElementClickInterceptedException) as e:
             # TODO: find a way to remove duplicate code below
             log_error(
-                title='Error clicking show more genres button',
+                title="Error clicking show more genres button",
                 error=e,
-                location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
-                data={'book_url': book_url}
+                location="notion_reading_list_update, create_book_page, get_book_details_from_url",
+                data={"book_url": book_url},
             )
     except (NoSuchElementException, ElementClickInterceptedException) as e:
         log_error(
-            title='Error clicking show more genres button',
+            title="Error clicking show more genres button",
             error=e,
-            location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
-            data={'book_url': book_url}
+            location="notion_reading_list_update, create_book_page, get_book_details_from_url",
+            data={"book_url": book_url},
         )
     except Exception as e:
         html_str = get_html_using_selenium(driver=driver)
         log_error(
-            title='Error clicking show more genres button',
+            title="Error clicking show more genres button",
             error=e,
-            location='notion_reading_list_update, create_book_page, get_book_details_from_url', 
-            data={'book_url': book_url, 'html': html_str}
+            location="notion_reading_list_update, create_book_page, get_book_details_from_url",
+            data={"book_url": book_url, "html": html_str},
         )
-        try: 
+        try:
             # if that's not it, maybe it's a goodreads login popup
-            popup_close_btn = driver.find_element(By.CSS_SELECTOR,
-            "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button"
+            popup_close_btn = driver.find_element(
+                By.CSS_SELECTOR,
+                "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button",
             )
             popup_close_btn.click()
 
             # try again
             title_elem = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR,"h1.Text__title1"))
+                EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
             )
             show_more_genres_button = driver.find_element(
                 By.CSS_SELECTOR,
-                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem"
+                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem",
             )
             show_more_genres_button.click()
-            
+
             print("successfully closed popup finally!")
         except:
             pass
 
-
     html_str = get_html_using_selenium(driver=driver)
 
     # parse the html string for the book details
-    soup = BeautifulSoup(html_str, 'lxml')
+    soup = BeautifulSoup(html_str, "lxml")
 
-    featured_details = soup.find_all('div', {'class': 'FeaturedDetails'})[0].find_all('p') # contains pub date and number of pages
+    featured_details = soup.find_all("div", {"class": "FeaturedDetails"})[0].find_all(
+        "p"
+    )  # contains pub date and number of pages
 
     numberOfPages_html = featured_details[0]
-    page_count = re.search(r'\d+', numberOfPages_html.text).group()
+    page_count = re.search(r"\d+", numberOfPages_html.text).group()
     page_count = int(page_count)
 
     publication_html = featured_details[1]
-    publication_date = re.search(r'published\s+(.*)', publication_html.text.strip()).group(1)
+    publication_date = re.search(
+        r"published\s+(.*)", publication_html.text.strip()
+    ).group(1)
 
     genres_list_html = soup.select(
-        "span.BookPageMetadataSection__genreButton > a > span.Button__labelItem")
+        "span.BookPageMetadataSection__genreButton > a > span.Button__labelItem"
+    )
     genres = [genre.text for genre in genres_list_html]
     genres = set(genres)  # use set to remove duplicates
     if "Audiobook" in genres:
         genres.remove("Audiobook")
 
     book_details = {
-        'publication_date': publication_date,
-        'genres': list(genres),
-        'page_count': page_count,
+        "publication_date": publication_date,
+        "genres": list(genres),
+        "page_count": page_count,
     }
     return book_details
 
 
 def filter_and_sort_books(book_list, year):
-    filtered_list = [i for i in book_list if year in i['date_read']]
-    sorted_list = sorted(filtered_list, key=lambda k: k['date_read'], reverse=True)
+    filtered_list = [i for i in book_list if year in i["date_read"]]
+    sorted_list = sorted(filtered_list, key=lambda k: k["date_read"], reverse=True)
     return sorted_list
 
 
@@ -329,8 +334,8 @@ def convert_date_to_isoformat(date_str):
 
     date_str = date_str.strip()
     try:
-        date_obj = datetime.datetime.strptime(date_str, '%b %d, %Y')
+        date_obj = datetime.datetime.strptime(date_str, "%b %d, %Y")
     except ValueError:
-        date_obj = datetime.datetime.strptime(date_str, '%b %Y')
+        date_obj = datetime.datetime.strptime(date_str, "%b %Y")
 
-    return date_obj.strftime('%Y-%m-%d')
+    return date_obj.strftime("%Y-%m-%d")
