@@ -14,7 +14,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from firestore_methods import log_error
-from web_scraping import build_driver, get_html_using_selenium
+from goodreads_session import build_goodreads_driver, get_goodreads_html
+from web_scraping import get_html_using_selenium
 
 URL_HOMEPAGE = "https://www.goodreads.com/user/show/58061822-forrest-herman"
 URL_BOOKS_READ = "https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=read&sort=date_read"
@@ -22,7 +23,7 @@ URL_CURRENTLY_READING = "https://www.goodreads.com/review/list/58061822-forrest-
 
 
 def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
-    html_str = get_html_using_selenium(url)
+    html_str = get_goodreads_html(url)
     # TODO: split into 2 functions ---------------
     soup = BeautifulSoup(html_str, "lxml")
 
@@ -171,7 +172,7 @@ def get_books_list_data_from_html(html_str) -> list:
 def get_book_details_from_url(book_url):
     """Get the book details from the url provided."""
 
-    driver = build_driver(book_url, headless=True)
+    driver = build_goodreads_driver(book_url, headless=True)
 
     # click the show more genres button
     try:
@@ -287,7 +288,7 @@ def get_read_and_reading(urls=[URL_BOOKS_READ, URL_CURRENTLY_READING], all_time=
 
     for url in urls:
         # get the webpage html
-        html_str = get_html_using_selenium(url, infinite_scroll=all_time)
+        html_str = get_goodreads_html(url, infinite_scroll=all_time)
         # get the book data list (reading or read)
         book_list = get_books_list_data_from_html(html_str)
         book_lists.append(book_list)
