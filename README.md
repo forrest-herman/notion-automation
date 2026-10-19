@@ -80,6 +80,12 @@ If Goodreads requests
 additional verification, complete it manually and retry. Credentials and login
 page HTML are not included in login failure messages.
 
+Blank pages are given up to 15 seconds to render before the scrape stops with
+an explicit error. If a URL works with `headless=False` but stays blank in
+headless mode, test Chrome and Edge separately. A headed browser on a Linux
+virtual display (Xvfb) is another option for unattended runs; it must use
+`headless=False`, and Xvfb must be installed on the runner.
+
 ### Work in Progress
 - [x] Add calendar integration for events
 - [x] Add proper tags based on template

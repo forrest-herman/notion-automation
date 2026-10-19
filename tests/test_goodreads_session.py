@@ -15,6 +15,7 @@ def driver(monkeypatch):
     browser.current_url = TARGET
     browser.find_elements.return_value = []
     monkeypatch.setattr(sessions, "build_driver", Mock(return_value=browser))
+    monkeypatch.setattr(sessions, "wait_for_page_content", Mock())
     return browser
 
 
@@ -153,3 +154,32 @@ def test_html_read_does_not_navigate_past_login_check(monkeypatch, driver):
     assert sessions.get_goodreads_html(TARGET, infinite_scroll=True) == read_html.return_value
     driver.get.assert_called_once_with(TARGET)
     read_html.assert_called_once_with(driver=driver, infinite_scroll=True)
+
+
+def test_blank_page_waits_for_rendered_content(monkeypatch):
+    browser = Mock()
+    browser.execute_script.side_effect = [False, True]
+    sessions.wait_for_page_content(browser, timeout=1)
+    assert browser.execute_script.call_count == 2
+
+
+def test_blank_page_timeout_has_actionable_error(monkeypatch):
+    wait = Mock()
+    wait.until.side_effect = TimeoutException("sensitive response details")
+    monkeypatch.setattr(sessions, "WebDriverWait", Mock(return_value=wait))
+    with pytest.raises(RuntimeError, match="Goodreads returned an empty page") as error:
+        sessions.wait_for_page_content(Mock())
+    assert "sensitive response details" not in str(error.value)
+
+
+def test_blank_page_stops_before_login_or_scrape(monkeypatch, driver):
+    monkeypatch.setattr(sessions, "wait_for_page_content", Mock(side_effect=RuntimeError("empty page")))
+    login = Mock()
+    read_html = Mock()
+    monkeypatch.setattr(sessions, "login_goodreads", login)
+    monkeypatch.setattr(sessions, "get_html_using_selenium", read_html)
+    with pytest.raises(RuntimeError, match="empty page"):
+        sessions.get_goodreads_html(TARGET)
+    login.assert_not_called()
+    read_html.assert_not_called()
+    driver.quit.assert_called_once()

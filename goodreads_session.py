@@ -16,6 +16,20 @@ SIGNED_IN_SELECTOR = (
 )
 
 
+def wait_for_page_content(driver, timeout=15):
+    """Reject blank responses before checking login or parsing reading data."""
+    try:
+        WebDriverWait(driver, timeout).until(lambda browser: browser.execute_script(
+            "return Boolean(document.body && document.body.innerText.trim());"
+        ))
+    except TimeoutException:
+        raise RuntimeError(
+            "Goodreads returned an empty page. Login and scraping were stopped. "
+            "If this occurs only in headless mode, try another browser or run "
+            "with headless=False; on Linux CI, use a virtual display such as Xvfb."
+        ) from None
+
+
 def is_sign_in_page(driver):
     """Recognize login redirects or a visible login form, not header links."""
     location = urlsplit(driver.current_url)
@@ -82,12 +96,14 @@ def build_goodreads_driver(link=None, browser="", headless=True):
     driver = build_driver(browser=browser, headless=headless)
     try:
         driver.get(link or SIGN_IN_URL)
+        wait_for_page_content(driver)
         if is_sign_in_page(driver):
             login_goodreads(driver)
             if link and urlsplit(link).path.rstrip("/") not in {
                 "/user/sign_in", "/ap/signin"
             }:
                 driver.get(link)
+                wait_for_page_content(driver)
                 if is_sign_in_page(driver):
                     raise RuntimeError("Goodreads still requires login for the requested page.")
         return driver
