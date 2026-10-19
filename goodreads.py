@@ -21,21 +21,6 @@ URL_BOOKS_READ = "https://www.goodreads.com/review/list/58061822-forrest-herman?
 URL_CURRENTLY_READING = "https://www.goodreads.com/review/list/58061822-forrest-herman?order=d&shelf=currently-reading"
 
 
-def get_rating_from_text(rating_text):
-    rating_dict = {
-        "did not like it": "1",
-        "it was ok": "2",
-        "liked it": "3",
-        "really liked it": "4",
-        "it was amazing": "5",
-    }
-    try:
-        rating = rating_dict[rating_text]
-    except KeyError:
-        rating = None  # avoid issues if the book is unrated
-    return rating
-
-
 def get_progress_from_home_page(url=URL_HOMEPAGE, book_title=None):
     html_str = get_html_using_selenium(url)
     # TODO: split into 2 functions ---------------
@@ -135,11 +120,9 @@ def get_books_list_data_from_html(html_str) -> list:
 
         # parse rating
         td = tr.find_all("td", {"class": "field rating"})[0]
-        # TODO: goodreads updated their ratings and now there's a div with `data-rating="4.25"`.
-        span = td.find_all("span", {"class": "staticStars notranslate"})[0]
-        rating_text = span.get("title")
-        rating = get_rating_from_text(rating_text)
-        book_dict["rating"] = rating
+        stars = td.select_one("div.stars[data-rating]")
+        rating = stars.get("data-rating") if stars else None
+        book_dict["rating"] = None if rating == "0.0" else rating
 
         # parse review
         review = ""
