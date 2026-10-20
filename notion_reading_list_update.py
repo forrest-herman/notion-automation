@@ -364,7 +364,19 @@ def query_reads_list(notion_book, book_details):
     return None
 
 
+def _get_all_saved_authors():
+    """Retrieve the list of all authors saved in the Books database Select property."""
+    data = read_database(books_database_id)
+    author_options = data["properties"]["Author"]["select"]["options"]
+    return [tag_prop.get("name", "") for tag_prop in author_options]
+
+
 def query_book_list(book_details):
+    # need to check if Author is in Select property first, otherwise could get a 400 error.
+    author = book_details["author_name"]
+    if author not in _get_all_saved_authors():
+        return None  # author not added, so clearly book isn't either
+
     book_query_payload = {
         "filter": {
             "and": [
@@ -374,7 +386,7 @@ def query_book_list(book_details):
                 },
                 {
                     "property": "Author",
-                    "select": {"equals": book_details["author_name"]},
+                    "select": {"equals": author},
                 },
             ]
         }
