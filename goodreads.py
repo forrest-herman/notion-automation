@@ -169,21 +169,36 @@ def get_books_list_data_from_html(html_str) -> list:
     return book_list
 
 
+def _expand_book_genres(driver):
+    """Expand the genres, dismissing a blocking Goodreads popup if necessary."""
+    genres_button = (
+        By.CSS_SELECTOR,
+        '[data-testid="genresList"] button[aria-label="Show all items in the list"]',
+    )
+    wait = WebDriverWait(driver, 5)
+    try:
+        wait.until(EC.element_to_be_clickable(genres_button)).click()
+    except ElementClickInterceptedException:
+        wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".Overlay__close button"))
+        ).click()
+        wait.until(
+            EC.invisibility_of_element_located((By.CSS_SELECTOR, ".Overlay__content"))
+        )
+        wait.until(EC.element_to_be_clickable(genres_button)).click()
+
+
 def get_book_details_from_url(book_url):
     """Get the book details from the url provided."""
 
-    driver = build_goodreads_driver(book_url, headless=True)
+    driver = build_goodreads_driver(book_url)
 
     # click the show more genres button
     try:
         title_elem = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
         )
-        show_more_genres_button = driver.find_element(
-            By.CSS_SELECTOR,
-            "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem",
-        )
-        show_more_genres_button.click()
+        _expand_book_genres(driver)
     except TimeoutException:
         print("The book page wouldn't load: ", book_url, "Reloading...")
         driver.refresh()
@@ -191,11 +206,7 @@ def get_book_details_from_url(book_url):
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
             )
-            show_more_genres_button = driver.find_element(
-                By.CSS_SELECTOR,
-                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline > span.Button__labelItem",
-            )
-            show_more_genres_button.click()
+            _expand_book_genres(driver)
         except TimeoutException:
             raise Exception("Couldn't load book details page")
         except (NoSuchElementException, ElementClickInterceptedException) as e:
@@ -221,27 +232,6 @@ def get_book_details_from_url(book_url):
             location="notion_reading_list_update, create_book_page, get_book_details_from_url",
             data={"book_url": book_url, "html": html_str},
         )
-        try:
-            # if that's not it, maybe it's a goodreads login popup
-            popup_close_btn = driver.find_element(
-                By.CSS_SELECTOR,
-                "div.Overlay__window > div.Overlay__header > div.Overlay__close > div.Button__container > button.Button",
-            )
-            popup_close_btn.click()
-
-            # try again
-            title_elem = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "h1.Text__title1"))
-            )
-            show_more_genres_button = driver.find_element(
-                By.CSS_SELECTOR,
-                "div.BookPageMetadataSection__genres > ul > div > button.Button.Button--tag-inline.Button--small > span.Button__labelItem",
-            )
-            show_more_genres_button.click()
-
-            print("successfully closed popup finally!")
-        except:
-            pass
 
     html_str = get_html_using_selenium(driver=driver)
 
