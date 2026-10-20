@@ -124,6 +124,17 @@ def build_driver(link: str = None, browser: str = "", headless: bool = True):
         )
         raise
 
+    if headless:
+        try:
+            user_agent = driver.execute_script("return navigator.userAgent")
+            driver.execute_cdp_cmd(
+                "Network.setUserAgentOverride",
+                {"userAgent": user_agent.replace("HeadlessChrome/", "Chrome/")},
+            )
+        except Exception:
+            driver.quit()
+            raise
+
     if link:
         driver.get(link)
     return driver

@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -11,6 +11,8 @@ def drivers(monkeypatch):
     monkeypatch.delenv('EDGE_DRIVER_PATH', raising=False)
     chrome = Mock()
     edge = Mock()
+    for browser in (chrome, edge):
+        browser.return_value.execute_script.return_value = 'Mozilla/5.0 HeadlessChrome/155.0.0.0 Safari/537.36'
     monkeypatch.setattr(web_scraping.webdriver, 'Chrome', chrome)
     monkeypatch.setattr(web_scraping.webdriver, 'Edge', edge)
     return chrome, edge
@@ -35,6 +37,8 @@ def test_automatic_driver_selection(monkeypatch, drivers, os_name, browser, expe
     kwargs = selected.call_args.kwargs
     assert not kwargs['service'].path  # Selenium Manager resolves the executable.
     assert '--headless' not in kwargs['options'].arguments
+    driver.execute_script.assert_not_called()
+    driver.execute_cdp_cmd.assert_not_called()
 
 
 @pytest.mark.parametrize('browser,path_variable', [
@@ -76,3 +80,29 @@ def test_startup_failure_preserves_original_error(drivers, capsys):
 
     assert raised.value is error
     assert 'CHROME_DRIVER_PATH' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('browser', ['chrome', 'edge', ''])
+def test_headless_user_agent_is_overridden_before_navigation(monkeypatch, drivers, browser):
+    monkeypatch.setattr(web_scraping, 'OS_NAME', 'Linux')
+    driver = web_scraping.build_driver(link='https://example.com', browser=browser)
+
+    assert driver.mock_calls == [
+        call.execute_script('return navigator.userAgent'),
+        call.execute_cdp_cmd('Network.setUserAgentOverride', {
+            'userAgent': 'Mozilla/5.0 Chrome/155.0.0.0 Safari/537.36',
+        }),
+        call.get('https://example.com'),
+    ]
+
+
+def test_user_agent_override_failure_closes_driver(drivers):
+    chrome, _ = drivers
+    driver = chrome.return_value
+    driver.execute_cdp_cmd.side_effect = RuntimeError('Override failed')
+
+    with pytest.raises(RuntimeError, match='Override failed'):
+        web_scraping.build_driver(link='https://example.com', browser='chrome')
+
+    driver.quit.assert_called_once()
+    driver.get.assert_not_called()

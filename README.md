@@ -61,6 +61,31 @@ also installs the updated driver manager.
 Cloudinary and Google Auth are updated alongside Selenium to support its required
 urllib3 version.
 
+### Goodreads login
+
+Set `GOODREADS_EMAIL` and `GOODREADS_PASSWORD` in your local `.env` and as
+GitHub Actions repository secrets with the same names. All Goodreads requests
+open their target URL first. If Goodreads presents a sign-in page or visible
+email-login form, the browser signs in and returns to the requested URL.
+Public pages do not require credentials. No session files are saved.
+
+To check login locally without running the Notion/Firestore updates:
+
+```powershell
+.\env\Scripts\python.exe -c "from goodreads_session import build_goodreads_driver; driver = build_goodreads_driver(); print('Goodreads login succeeded'); driver.quit()"
+```
+
+When login is required, missing credentials or a login timeout stop the scrape.
+If Goodreads requests
+additional verification, complete it manually and retry. Credentials and login
+page HTML are not included in login failure messages.
+
+Blank pages are given up to 15 seconds to render before the scrape stops with
+an explicit error. If a URL works with `headless=False` but stays blank in
+headless mode, test Chrome and Edge separately. A headed browser on a Linux
+virtual display (Xvfb) is another option for unattended runs; it must use
+`headless=False`, and Xvfb must be installed on the runner.
+
 ### Work in Progress
 - [x] Add calendar integration for events
 - [x] Add proper tags based on template
