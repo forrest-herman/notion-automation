@@ -20,7 +20,9 @@ def test_get_last_played():
         "rtime_last_played": 1669865162
     }
 
-    time = datetime.datetime(2022, 11, 30, hour=22, minute=26, second=2)
+    time = datetime.datetime(
+        2022, 12, 1, hour=3, minute=26, second=2, tzinfo=datetime.timezone.utc
+    ).astimezone().replace(tzinfo=None)
 
     assert get_last_played(game) == time
     assert get_last_played({"rtime_last_played": 0}) == None
