@@ -1,36 +1,39 @@
 import datetime
 import os
 
-from notion_api_methods import *
-from notion_insurance_tracker import add_new_appointment
-import utils
+# use this command to pull the latest changes:
+# pip install -e "git+https://github.com/forrest-herman/python-packages-common.git@main#egg=google_calendar_integrations&subdirectory=google_calendar_integrations"
+# load environment variables
+from dotenv import load_dotenv
+from google_calendar_integrations import cal_utils
 
 # import cloudinary
-
 # custom package found at:
 # https://github.com/forrest-herman/python-packages-common/tree/main/google_calendar_integrations
 from google_calendar_integrations.gcal_methods import GoogleCalendarAccount
-from google_calendar_integrations import cal_utils
-# use this command to pull the latest changes:
-# pip install -e "git+https://github.com/forrest-herman/python-packages-common.git@main#egg=google_calendar_integrations&subdirectory=google_calendar_integrations"
 
-# load environment variables
-from dotenv import load_dotenv
+import utils
+from notion_api_methods import *
+from notion_insurance_tracker import add_new_appointment
+
 load_dotenv()
 
-TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
-OS_NAME = os.getenv('OS')
+TOKEN = os.getenv("NOTION_TOKEN")  # notion credentials
+OS_NAME = os.getenv("OS")
 
 # see instructions here
 # https://developers.notion.com/reference/retrieve-a-database
 
-database_id_journal = '3f6b1a7d1198421f83365c74cdb7f23f'  # Journal
+database_id_journal = "3f6b1a7d1198421f83365c74cdb7f23f"  # Journal
+journal_data_source_id = (
+    "63116223-45e4-4c69-a4fb-ea4cffcb1e45"  # in 2026, this is used instead of database
+)
 
 headers = {
     "Accept": "application/json",
     "Notion-Version": "2022-02-22",
     "Content-Type": "application/json",
-    "Authorization": "Bearer " + TOKEN
+    "Authorization": "Bearer " + TOKEN,
 }
 
 
@@ -46,12 +49,7 @@ weekday = datetime.date.today().weekday()
 def query_journal() -> tuple[dict, dict]:
     today_query_payload = {
         "page_size": 10,
-        "filter": {
-            "property": "Date",
-            "date": {
-                "equals": today
-            }
-        }
+        "filter": {"property": "Date", "date": {"equals": today}},
     }
 
     # check if page already exists
@@ -59,17 +57,18 @@ def query_journal() -> tuple[dict, dict]:
 
     if not today_journal:
         return None, None
-    
+
     # check if page has content
-    content = read_block_children(today_journal[0]['id'])
+    content = read_block_children(today_journal[0]["id"])
     if content:
         print("Journal page already exists with content")
         return today_journal[0], content
-    
+
     print("Blank journal page already exists")
     return today_journal[0], None
 
 
+# @deprecated("use get_journal_template_id instead")
 def build_template_query_payload():
     # get the correct template based on weekday or weekend
     if weekday < 5:  # monday - friday
@@ -81,61 +80,65 @@ def build_template_query_payload():
     # prepare a payload to query the database
     template_query_payload = {
         "page_size": 10,
-        "filter": {
-            "property": "Name",
-            "rich_text": {
-                "equals": pageName
-            }
-        }
+        "filter": {"property": "Name", "rich_text": {"equals": pageName}},
     }
 
     return template_query_payload
 
 
+def get_journal_template_id():
+    """Retrieve the ID of the template to use for the current day."""
+
+    # TODO: get smart about holidays, etc. calendar days off, etc.
+    if weekday < 5:  # monday - friday
+        template_name = "@Today - Work"
+    else:
+        template_name = "@Today"
+
+    templates_respone = query_data_source_templates(journal_data_source_id)
+    templates = templates_respone.get("templates")
+    # find the template that matches
+    template_id = next(
+        (template["id"] for template in templates if template["name"] == template_name),
+        None,
+    )
+
+    return template_id
+
+
 # MAIN SCRIPT
+
 
 def generate_journal_entry():
     """Main script to create daily journal entry."""
 
     existing_journal_page, existing_journal_content = query_journal()
-    # if existing_journal_page.get('content') is not None:
-    #     return None
-    
-    template_query_payload = build_template_query_payload()
 
-    # get the template page id and read its blocks
-    templatePage_id = query_database_pages(
-        database_id_journal, template_query_payload)[0]['id']
-    templateBlocks = read_block_children_recursive(templatePage_id, headers)
+    # Assign the right template
+    template_id = get_journal_template_id()
 
+    # This next part is optional but keeps the tags in the right order
     # get the property id of the jounral page template and read the property tags
-    tag_property_id = read_database(database_id_journal, headers)['properties']['Tags']['id']
-    tags_property = read_page_properties(templatePage_id, tag_property_id, headers)
+    tag_property_id = read_database(database_id_journal, headers)["properties"]["Tags"][
+        "id"
+    ]
+    tags_property = read_page_properties(template_id, tag_property_id, headers)
 
-    # build properties tag payload for the new page
-    newPage_tags = {
-        tags_property['type']: [
-            {
-                'name': multi_select['name']
-            } for multi_select in tags_property[tags_property['type']]
-        ]
-    }
+    template_tags = tags_property.get("multi_select")  # simpler
 
     ##########################################
     # add more tags to the properties of a page
     ##########################################
-    tags_to_add = []
-
-    # if weekday == 1:  # tuesday
-    #     tags_to_add.append({'name': 'Groceries 🛒'})
 
     # get calendar details and add more content to the body of the page
     newBlocks, events_today_info = get_new_body_content_and_cal_events()
 
     # check if certain events match page property tags
-    tags_to_add.extend(check_for_event_tags(events_today_info))
+    tags_to_add = ["Programming 👩‍💻"]  # check_for_event_tags(events_today_info)
+    page_tags = template_tags + [{"name": tag} for tag in tags_to_add]
 
-    newPage_tags[tags_property['type']].extend([{'name': tag} for tag in tags_to_add])
+    # format the property correctly
+    tags_property = {tags_property["type"]: page_tags}
 
     # payload for new journal page based on template, current date and tags
     newPageData_journal = {
@@ -149,8 +152,8 @@ def generate_journal_entry():
                             "type": "date",
                             "date": {
                                 "start": today,
-                            }
-                        }
+                            },
+                        },
                     }
                 ]
             },
@@ -159,15 +162,13 @@ def generate_journal_entry():
                     "start": today,
                 }
             },
-            "Tags": newPage_tags,
+            "Tags": tags_property,
         },
-        # "children": templateBlocks
+        "template": {"type": "template_id", "template_id": template_id}
+        if template_id
+        else {"type": "none"},
+        # "children": templateBlocks # can't include children when using a template
     }
-
-    # add all the new blocks to the template
-    for count, block in enumerate(newBlocks):
-        # list.insert(index, elem)
-        templateBlocks.insert(1 + count, block)
 
     if existing_journal_page is None:
         # create the new page
@@ -175,22 +176,24 @@ def generate_journal_entry():
     elif existing_journal_content is None:
         # blank journal page exists already
         # update page properties for the blank journal page
-        newPage_id = update_page(existing_journal_page['id'], newPageData_journal)["id"]
+        newPage_id = update_page(existing_journal_page["id"], newPageData_journal)["id"]
     else:
         # ensure properties are correct
-        existing_page_tags = existing_journal_page['properties']['Tags']['multi_select']
-        template_tags_l = [t['name'] for t in newPage_tags['multi_select']] # list of tags in template
+        existing_page_tags = existing_journal_page["properties"]["Tags"]["multi_select"]
+        template_tags_l = [t["name"] for t in page_tags]  # list of tags in template
         for tag in existing_page_tags:
-            if tag['name'] not in template_tags_l:
-                newPageData_journal["properties"]["Tags"]['multi_select'].append(tag) 
-        update_page(existing_journal_page['id'], newPageData_journal)["id"]
-        return None # page already exists with content
+            if tag["name"] not in template_tags_l:
+                newPageData_journal["properties"]["Tags"]["multi_select"].append(tag)
+        update_page(existing_journal_page["id"], newPageData_journal)["id"]
+        return None  # page already exists with content
 
     # add the template blocks to the new page (including sub_children)
-    append_block_children(newPage_id, templateBlocks)
+    # append_block_children(newPage_id, templateBlocks)
 
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
+
+    # TODO: need to wait for template to populate, then add extra content like calendar etc.
 
     return True
     ##########################################
@@ -202,15 +205,16 @@ def get_todays_events(today_start, today_end):
     # prepare file paths
 
     if OS_NAME:
-        client_secret_location = 'credentials/gcal_client_secret.json'
+        client_secret_location = "credentials/gcal_client_secret.json"
         CREDENTIALS_FILE = os.path.join(
-            os.path.dirname(__file__), client_secret_location)
-        token_location = 'credentials/token.pickle'
+            os.path.dirname(__file__), client_secret_location
+        )
+        token_location = "credentials/token.pickle"
         TOKEN_FILE = os.path.join(os.path.dirname(__file__), token_location)
     else:
-        CREDENTIALS_FILE = 'google-credentials.json'
+        CREDENTIALS_FILE = "google-credentials.json"
         # TOKEN_FILE = cloudinary.utils.cloudinary_url("token.pickle", resource_type="raw")
-        TOKEN_FILE = 'token.pickle'
+        TOKEN_FILE = "token.pickle"
 
     try:
         # create a Google Calendar API service object
@@ -220,8 +224,8 @@ def get_todays_events(today_start, today_end):
             timeMin=today_start,
             timeMax=today_end,
             singleEvents=True,
-            orderBy='startTime',
-            timeZone='America/Toronto'
+            orderBy="startTime",
+            timeZone="America/Toronto",
         )
         """
         Example:
@@ -238,19 +242,22 @@ def get_todays_events(today_start, today_end):
 
         events_today_info = [
             {
-                'summary': cal_utils.get_summary_if_possible(event),
-                'calendar': event['calendar'],
-                'htmlLink': event['htmlLink'],
-                'start': cal_utils.get_datetime_from_event(event['start']),
+                "summary": cal_utils.get_summary_if_possible(event),
+                "calendar": event["calendar"],
+                "htmlLink": event["htmlLink"],
+                "start": cal_utils.get_datetime_from_event(event["start"]),
                 # basically: event['end']['dateTime'] or event['end']['date']
-                'end': cal_utils.get_datetime_from_event(event['end'])
-            } for event in events_from_all_calendars]
+                "end": cal_utils.get_datetime_from_event(event["end"]),
+            }
+            for event in events_from_all_calendars
+        ]
 
         # events_today = set(events_today)  # remove duplicates
         # filter events
         events_today_info = cal_utils.filter_events_by_calendar(
-            events_today_info, ['Personal old', 'angele.beaulne@gmail.com'],
-            exclude=True
+            events_today_info,
+            ["Personal old", "angele.beaulne@gmail.com"],
+            exclude=True,
         )
         return events_today_info
 
@@ -289,20 +296,25 @@ def get_new_body_content_and_cal_events():
                             "strikethrough": False,
                             "underline": False,
                             "code": False,
-                            "color": "gray"
+                            "color": "gray",
                         },
                     },
                     {
                         "type": "text",
                         "text": {
                             "content": " ({} - {})".format(
-                                event['start'].strftime(utils.get_12hr_time_format_for_os(OS_NAME)),
-                                event['end'].strftime(utils.get_12hr_time_format_for_os(OS_NAME))
-                            ) if not cal_utils.is_all_day(event) else " (all day)",
-                            "link": {
-                                'type': 'url',
-                                'url': event['htmlLink']
-                            } if event['htmlLink'] else None,
+                                event["start"].strftime(
+                                    utils.get_12hr_time_format_for_os(OS_NAME)
+                                ),
+                                event["end"].strftime(
+                                    utils.get_12hr_time_format_for_os(OS_NAME)
+                                ),
+                            )
+                            if not cal_utils.is_all_day(event)
+                            else " (all day)",
+                            "link": {"type": "url", "url": event["htmlLink"]}
+                            if event["htmlLink"]
+                            else None,
                         },
                         "annotations": {
                             "bold": False,
@@ -310,13 +322,14 @@ def get_new_body_content_and_cal_events():
                             "strikethrough": False,
                             "underline": False,
                             "code": False,
-                            "color": "gray"
+                            "color": "gray",
                         },
-                    }
+                    },
                 ],
-                "color": "default"
-            }
-        } for event in sorted(events_today_info, key=lambda x: x['start'])
+                "color": "default",
+            },
+        }
+        for event in sorted(events_today_info, key=lambda x: x["start"])
     ]
     return newBlocks, events_today_info
 
@@ -326,18 +339,14 @@ def update_journal_page_tags(newPage_id, tags):
     tag_object = {
         "Tags": {
             "type": "multi_select",
-            "multi_select": [
-                {
-                    'name': tag
-                } for tag in tags
-            ]
+            "multi_select": [{"name": tag} for tag in tags],
         }
     }
     return update_journal_page_properties(newPage_id, tag_object)
 
 
 def update_journal_page_properties(newPage_id, new_properties_dict):
-    """ 
+    """
     "properties": {
         "Tags": {
             "type": "multi_select",
@@ -350,9 +359,7 @@ def update_journal_page_properties(newPage_id, new_properties_dict):
     },
     """
     # update page properites
-    newPageData_journal = {
-        "properties": new_properties_dict
-    }
+    newPageData_journal = {"properties": new_properties_dict}
 
     return update_page(newPage_id, newPageData_journal)
 
@@ -368,43 +375,43 @@ def check_for_event_tags(events_today_info):
     tags = []
 
     for event in events_today_info:
-        event_summary = event['summary'].lower()
+        event_summary = event["summary"].lower()
 
-        if 'fencing' in event_summary:
-            tags.append('Fencing 🤺')
-        if 'frisbee' in event_summary:
-            tags.append('Frisbee')
-        if 'grocery' in event_summary:
-            tags.append('Groceries 🛒')
-        if 'angèle' in event_summary:
-            tags.append('Angèle 💕')
-        if 'macfe' in event_summary or 'formula' in event_summary:
-            tags.append('MACFE')
-        if 'wedding' in event_summary:
-            tags.append('Wedding')
-            tags.append('Photography 📷')
-        if 'jennifer rapley' in event_summary:
-            tags.append('Therapy ☯')
+        if "fencing" in event_summary:
+            tags.append("Fencing 🤺")
+        if "frisbee" in event_summary:
+            tags.append("Frisbee")
+        if "grocery" in event_summary:
+            tags.append("Groceries 🛒")
+        if "angèle" in event_summary:
+            tags.append("Angèle 💕")
+        if "macfe" in event_summary or "formula" in event_summary:
+            tags.append("MACFE")
+        if "wedding" in event_summary:
+            tags.append("Wedding")
+            tags.append("Photography 📷")
+        if "jennifer rapley" in event_summary:
+            tags.append("Therapy ☯")
             # add to insurance coverage tracker
-            add_new_appointment('Therapy', cost=140, emoji='☯')
-        if 'dentist' in event_summary:
-            tags.append('Dentist 🦷')
+            add_new_appointment("Therapy", cost=140, emoji="☯")
+        if "dentist" in event_summary:
+            tags.append("Dentist 🦷")
             # add to insurance coverage tracker
-            add_new_appointment('Dentist', emoji='🦷')
-        if 'physio' in event_summary:
-            tags.append('Physio 🦵')
+            add_new_appointment("Dentist", emoji="🦷")
+        if "physio" in event_summary:
+            tags.append("Physio 🦵")
             # add to insurance coverage tracker
-            add_new_appointment('Physiotherapy', emoji='🦵')
-        if 'chiro' in event_summary:
-            tags.append('Chiropractor')
+            add_new_appointment("Physiotherapy", emoji="🦵")
+        if "chiro" in event_summary:
+            tags.append("Chiropractor")
             # add to insurance coverage tracker
-            add_new_appointment('Chiropractor', emoji='💆')
-        if 'massage' in event_summary:
-            tags.append('Massage')
+            add_new_appointment("Chiropractor", emoji="💆")
+        if "massage" in event_summary:
+            tags.append("Massage")
             # add to insurance coverage tracker
-            add_new_appointment('Massage', emoji='💆')
-        if '1-on-1' in event_summary:
-            tags.append('1-on-1')
+            add_new_appointment("Massage", emoji="💆")
+        if "1-on-1" in event_summary:
+            tags.append("1-on-1")
 
     return tags
 
