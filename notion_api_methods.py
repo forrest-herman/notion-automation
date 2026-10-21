@@ -1,15 +1,15 @@
 import os
-import requests
 
-from utils import save_json_to_file
+import requests
 
 # load environment variables
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from firestore_methods import log_error
 
-TOKEN = os.getenv('NOTION_TOKEN')  # notion credentials
+TOKEN = os.getenv("NOTION_TOKEN")  # notion credentials
 if TOKEN is None:
     raise Exception("Notion token not found in .env file.")
 
@@ -20,14 +20,18 @@ HEADERS = {
     "Accept": "application/json",
     "Notion-Version": "2022-02-22",
     "Content-Type": "application/json",
-    "Authorization": "Bearer " + TOKEN
+    "Authorization": "Bearer " + TOKEN,
 }
+
+# TODO: eventually move over to the new API
+NEW_HEADERS = HEADERS.copy()
+NEW_HEADERS.update({"Notion-Version": "2026-03-11"})
 
 
 def read_database(database_id, headers=HEADERS):
-    url = f'https://api.notion.com/v1/databases/{database_id}'
+    url = f"https://api.notion.com/v1/databases/{database_id}"
     result = requests.get(url, headers=headers)
-    if (result.status_code != 200):
+    if result.status_code != 200:
         print(result.status_code)
         print("read_database:", result.text)
 
@@ -38,11 +42,25 @@ def read_database(database_id, headers=HEADERS):
     return data
 
 
+def query_data_source_templates(data_source_id, headers=NEW_HEADERS):
+    """Note this uses the new data_source id instead of database id"""
+
+    url = f"https://api.notion.com/v1/data_sources/{data_source_id}/templates"
+    result = requests.get(url, headers=headers)
+
+    if result.status_code != 200:
+        print(result.status_code)
+
+    data = result.json()
+    return data
+
+
 def query_database_pages(database_id, query_payload, headers=HEADERS):
-    url = f'https://api.notion.com/v1/databases/{database_id}/query'
+    url = f"https://api.notion.com/v1/databases/{database_id}/query"
 
     result = requests.post(url, headers=headers, json=query_payload)
-    if (result.status_code != 200):
+    if result.status_code != 200:
+        # TODO: notion's api suddenly returns status, 400, "code": "validation_error" when filter select doesn't exist
         print(result.status_code)
         print("query_database_pages:", result.text)
 
@@ -50,7 +68,7 @@ def query_database_pages(database_id, query_payload, headers=HEADERS):
 
     # save_json_to_file(data['results'], './json/db_query.json')
 
-    return data['results']
+    return data["results"]
 
 
 def read_page_properties(page_id, property_id, headers=HEADERS):
@@ -58,9 +76,9 @@ def read_page_properties(page_id, property_id, headers=HEADERS):
     Read page properties.
     To obtain property_id's, use the read_database endpoint.
     """
-    url = f'https://api.notion.com/v1/pages/{page_id}/properties/{property_id}'
+    url = f"https://api.notion.com/v1/pages/{page_id}/properties/{property_id}"
     res = requests.get(url, headers=headers)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("read_page_properties", res.text)
 
@@ -72,10 +90,10 @@ def read_page_properties(page_id, property_id, headers=HEADERS):
 
 
 def read_block_children(block_id, headers=HEADERS):
-    """ Read child blocks of a page or block """
-    url = f'https://api.notion.com/v1/blocks/{block_id}/children'
+    """Read child blocks of a page or block"""
+    url = f"https://api.notion.com/v1/blocks/{block_id}/children"
     res = requests.get(url, headers=headers)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("read_block_children", res.text)
 
@@ -87,19 +105,31 @@ def read_block_children(block_id, headers=HEADERS):
 
 
 def read_block_children_recursive(block_id, headers=HEADERS):
-    """ Read child blocks of a page or block and their children, etc. """
-    url = f'https://api.notion.com/v1/blocks/{block_id}/children'
+    """Read child blocks of a page or block and their children, etc."""
+    url = f"https://api.notion.com/v1/blocks/{block_id}/children"
     res = requests.get(url, headers=headers)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("read_block_children_recursive", res.text)
-        log_error(f'Notion API', res.text, 'read_block_children_recursive', data={'reason': res.reason,'status_code': res.status_code, 'url': res.url, 'text': res.text})
+        log_error(
+            "Notion API",
+            res.text,
+            "read_block_children_recursive",
+            data={
+                "reason": res.reason,
+                "status_code": res.status_code,
+                "url": res.url,
+                "text": res.text,
+            },
+        )
 
     data = res.json()
 
     for block in data["results"]:
-        if (block["has_children"]):
-            block[block["type"]]["children"] = read_block_children_recursive(block["id"], headers)
+        if block["has_children"]:
+            block[block["type"]]["children"] = read_block_children_recursive(
+                block["id"], headers
+            )
 
     # save_json_to_file(data["results"], './json/block_children.json')
 
@@ -107,18 +137,26 @@ def read_block_children_recursive(block_id, headers=HEADERS):
 
 
 def append_block_children(block_id, blocks_data, headers=HEADERS):
-    """ Append child blocks to a page or block """
-    url = f'https://api.notion.com/v1/blocks/{block_id}/children'
+    """Append child blocks to a page or block"""
+    url = f"https://api.notion.com/v1/blocks/{block_id}/children"
 
-    payload = {
-        "children": blocks_data
-    }
+    payload = {"children": blocks_data}
 
     res = requests.patch(url, headers=headers, json=payload)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("append_block_children", res.text)
-        log_error(f'Notion API', res.text, 'append_block_children', data={'reason': res.reason,'status_code': res.status_code, 'url': res.url, 'text': res.text})
+        log_error(
+            "Notion API",
+            res.text,
+            "append_block_children",
+            data={
+                "reason": res.reason,
+                "status_code": res.status_code,
+                "url": res.url,
+                "text": res.text,
+            },
+        )
 
     data = res.json()
 
@@ -127,12 +165,13 @@ def append_block_children(block_id, blocks_data, headers=HEADERS):
     return data
 
 
-def create_page(newPageData, headers=HEADERS):
-    """ Create a new page in the provided database """
-    url = 'https://api.notion.com/v1/pages'
+def create_page(newPageData, headers=NEW_HEADERS):
+    """Create a new page in the provided database"""
+
+    url = "https://api.notion.com/v1/pages"
 
     res = requests.post(url, headers=headers, json=newPageData)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("create_page error:", res.text)
         print("newPageData:", newPageData)
@@ -156,10 +195,10 @@ def update_page(page_id, payload, headers=HEADERS):
         "cover": "dsgdg"
     }
     """
-    url = f'https://api.notion.com/v1/pages/{page_id}'
+    url = f"https://api.notion.com/v1/pages/{page_id}"
 
     res = requests.patch(url, headers=headers, json=payload)
-    if (res.status_code != 200):
+    if res.status_code != 200:
         print(res.status_code)
         print("update_page", res.text)
         exit()
