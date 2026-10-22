@@ -134,7 +134,7 @@ def generate_journal_entry():
     newBlocks, events_today_info = get_new_body_content_and_cal_events()
 
     # check if certain events match page property tags
-    tags_to_add = ["Programming 👩‍💻"]  # check_for_event_tags(events_today_info)
+    tags_to_add = check_for_event_tags(events_today_info)
     page_tags = template_tags + [{"name": tag} for tag in tags_to_add]
 
     # format the property correctly
