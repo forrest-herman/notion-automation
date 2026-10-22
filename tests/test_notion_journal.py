@@ -1,10 +1,54 @@
 import pytest
+from unittest.mock import Mock
+
+import notion_daily_journal as journal
 from notion_daily_journal import *
 
 
 
-def test_gcal():
-    a,b = get_new_body_content_and_cal_events()
+@pytest.mark.parametrize('has_events', [False, True])
+def test_gcal(monkeypatch, has_events):
+    start = datetime.datetime(2023, 5, 18, tzinfo=datetime.timezone.utc)
+    end = start + datetime.timedelta(days=1)
+    events = [
+        {
+            'summary': 'Afternoon meeting',
+            'start': start + datetime.timedelta(hours=14),
+            'end': start + datetime.timedelta(hours=15),
+            'htmlLink': 'https://example.test/afternoon',
+        },
+        {
+            'summary': 'Morning meeting',
+            'start': start + datetime.timedelta(hours=9),
+            'end': start + datetime.timedelta(hours=10),
+            'htmlLink': 'https://example.test/morning',
+        },
+    ] if has_events else []
+    get_events = Mock(return_value=events)
+    monkeypatch.setattr(journal.cal_utils, 'get_today_timerange', lambda: (start, end))
+    monkeypatch.setattr(journal, 'get_todays_events', get_events)
+    # Use a portable, deterministic format while checking time rendering.
+    monkeypatch.setattr(journal.utils, 'get_12hr_time_format_for_os', lambda _: '%H:%M')
+
+    blocks, returned_events = journal.get_new_body_content_and_cal_events()
+
+    get_events.assert_called_once_with(start, end)
+    assert returned_events == events
+    assert len(blocks) == len(events)
+    if not has_events:
+        assert blocks == []
+        return
+    assert [block['type'] for block in blocks] == ['bulleted_list_item'] * 2
+    text = [block['bulleted_list_item']['rich_text'] for block in blocks]
+    assert [parts[0]['text']['content'] for parts in text] == [
+        'Morning meeting', 'Afternoon meeting',
+    ]
+    assert [parts[1]['text']['content'] for parts in text] == [
+        ' (09:00 - 10:00)', ' (14:00 - 15:00)',
+    ]
+    assert text[0][1]['text']['link'] == {
+        'type': 'url', 'url': 'https://example.test/morning',
+    }
 
 
 class TestEventTags:

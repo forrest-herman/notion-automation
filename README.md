@@ -86,6 +86,20 @@ headless mode, test Chrome and Edge separately. A headed browser on a Linux
 virtual display (Xvfb) is another option for unattended runs; it must use
 `headless=False`, and Xvfb must be installed on the runner.
 
+### Running tests
+
+Install dependencies with `python -m pip install -r requirements.txt`, then run
+`python -m pytest` from the repository root. GitHub Actions runs the same unit
+suite without Google authentication or repository secrets.
+
+Tests supply dummy Notion and Steam configuration, disable loading `.env`, and
+reject unexpected HTTP requests and Google credential/client initialization.
+External services must be mocked in tests; local credentials are not used.
+Firestore initializes and caches its client only when a database operation is
+requested. Production automation still requires a valid local Firebase
+certificate or Application Default Credentials supplied by its Google
+authentication step.
+
 ### Work in Progress
 - [x] Add calendar integration for events
 - [x] Add proper tags based on template
