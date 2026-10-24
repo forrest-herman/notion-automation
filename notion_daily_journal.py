@@ -131,10 +131,10 @@ def generate_journal_entry():
     ##########################################
 
     # get calendar details and add more content to the body of the page
-    newBlocks, events_today_info = get_new_body_content_and_cal_events()
+    calendar_blocks, events_today_info = get_new_body_content_and_cal_events()
 
     # check if certain events match page property tags
-    tags_to_add = ["Programming 👩‍💻"]  # check_for_event_tags(events_today_info)
+    tags_to_add = check_for_event_tags(events_today_info)
     page_tags = template_tags + [{"name": tag} for tag in tags_to_add]
 
     # format the property correctly
@@ -164,19 +164,18 @@ def generate_journal_entry():
             },
             "Tags": tags_property,
         },
-        "template": {"type": "template_id", "template_id": template_id}
-        if template_id
-        else {"type": "none"},
-        # "children": templateBlocks # can't include children when using a template
+        "children": calendar_blocks,  # Note: can't include children when using a template
     }
 
     if existing_journal_page is None:
         # create the new page
-        newPage_id = create_page(newPageData_journal)["id"]
+        today_journal_page_id = create_page(newPageData_journal)["id"]
     elif existing_journal_content is None:
         # blank journal page exists already
         # update page properties for the blank journal page
-        newPage_id = update_page(existing_journal_page["id"], newPageData_journal)["id"]
+        today_journal_page_id = update_page(
+            existing_journal_page["id"], newPageData_journal
+        )["id"]
     else:
         # ensure properties are correct
         existing_page_tags = existing_journal_page["properties"]["Tags"]["multi_select"]
@@ -187,8 +186,13 @@ def generate_journal_entry():
         update_page(existing_journal_page["id"], newPageData_journal)["id"]
         return None  # page already exists with content
 
-    # add the template blocks to the new page (including sub_children)
-    # append_block_children(newPage_id, templateBlocks)
+    # Add the template blocks to the new page (Notion doesn't allow template and content on create)
+    template_update_payload = {
+        "template": {"type": "template_id", "template_id": template_id}
+        if template_id
+        else {"type": "none"},
+    }
+    update_page(today_journal_page_id, template_update_payload)
 
     # optional: update the page properties
     # update_journal_page_properties(newPage_id)
@@ -274,13 +278,26 @@ def get_new_body_content_and_cal_events():
 
     # Google Calendar API
     events_today_info = get_todays_events(today_start, today_end)
-    # print(json.dumps(events_today_info, indent=4))
+    # dummy data example
+    """
+    events_today_info = [
+        {
+            "start": datetime.datetime.now().replace(
+                hour=11, minute=50, second=0, microsecond=0
+            ),
+            "end": datetime.datetime.now().replace(
+                hour=12, minute=50, second=0, microsecond=0
+            ),
+            "summary": "Appointment A",
+            "htmlLink": None,
+        }
+    ]
+    """
 
     newBlocks = [
         {
             "object": "block",
             "has_children": False,
-            "archived": False,
             "type": "bulleted_list_item",
             "bulleted_list_item": {
                 "rich_text": [
@@ -352,7 +369,7 @@ def update_journal_page_properties(newPage_id, new_properties_dict):
             "type": "multi_select",
             "multi_select": [
                 {
-                    'name': 'Angèle 💕'
+                    'name': 'Programming 👩‍💻'
                 },
             ]
         }

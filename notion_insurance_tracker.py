@@ -1,8 +1,9 @@
 import datetime
+
 from notion_api_methods import *
 
-database_id_insurance = '7f213122bd5d41db995bb770c0d130c1'
-database_id_pivot = '8242f0300dda4be398b210b1e92285ab'
+database_id_insurance = "7f213122bd5d41db995bb770c0d130c1"
+database_id_pivot = "8242f0300dda4be398b210b1e92285ab"
 
 
 def query_insurance_database(date, type) -> bool:
@@ -10,20 +11,13 @@ def query_insurance_database(date, type) -> bool:
         "page_size": 10,
         "filter": {
             "and": [
-                {
-                    "property": "Date",
-                    "date": {
-                        "equals": date.isoformat()
-                    }
-                },
+                {"property": "Date", "date": {"equals": date.isoformat()}},
                 {
                     "property": "Type",
-                    "select": {
-                        "equals": type
-                    },
-                }
+                    "formula": {"string": {"equals": type}},
+                },
             ]
-        }
+        },
     }
 
     # check if page already exists
@@ -46,18 +40,11 @@ def get_latest_pivot_table_year(date, type) -> str:
     payload = {
         "filter": {
             "and": [
-                {
-                    "property": "Timeframe",
-                    "date": {
-                        "past_year": {}
-                    }
-                },
+                {"property": "Timeframe", "date": {"past_year": {}}},
                 {
                     "property": "Type",
-                    "select": {
-                        "equals": type
-                    },
-                }
+                    "select": {"equals": type},
+                },
             ]
             # "and": [
             #     {
@@ -81,37 +68,26 @@ def get_latest_pivot_table_year(date, type) -> str:
         newPageData = {
             "parent": {"database_id": database_id_pivot},
             "properties": {
-                "Type": {
-                    "type": "select",
-                    "select": {
-                        "name": type
-                    }
-                },
+                "Type": {"type": "select", "select": {"name": type}},
                 "ID": {
-                    "title": [
-                        {
-                            "text": {
-                                "content": f'{type} {year}-{int(year) + 1}'
-                            }
-                        }
-                    ]
+                    "title": [{"text": {"content": f"{type} {year}-{int(year) + 1}"}}]
                 },
                 "Timeframe": {
                     "date": {
                         "start": datetime.date(int(year), 9, 1).isoformat(),
-                        "end": datetime.date(int(year) + 1, 8, 31).isoformat()
+                        "end": datetime.date(int(year) + 1, 8, 31).isoformat(),
                     }
-                }
-            }
+                },
+            },
         }
         pivot_page_id = create_page(newPageData)["id"]
     else:
-        pivot_page_id = pivot_pages[0]['id']
+        pivot_page_id = pivot_pages[0]["id"]
 
     return pivot_page_id
 
 
-def add_new_appointment(type, cost=None, date=None, emoji=''):
+def add_new_appointment(type, cost=None, date=None, emoji=""):
     """Add a new appointment to the database"""
 
     if date is None:
@@ -133,37 +109,19 @@ def add_new_appointment(type, cost=None, date=None, emoji=''):
                             "type": "date",
                             "date": {
                                 "start": date.isoformat(),
-                            }
-                        }
+                            },
+                        },
                     }
                 ]
             },
-            "Type": {
-                "type": "select",
-                "select": {
-                    "name": type
-                }
-            },
-            "Cost": {
-                "number": cost
-            },
-            "Date": {
-                "date": {
-                    "start": date.isoformat()
-                }
-            },
+            "Type": {"type": "select", "select": {"name": type}},
+            "Cost": {"number": cost},
+            "Date": {"date": {"start": date.isoformat()}},
             "Linked to Pivot Table": {
-                "relation": [
-                    {
-                        "id": get_latest_pivot_table_year(date, type)
-                    }
-                ]
-            }
+                "relation": [{"id": get_latest_pivot_table_year(date, type)}]
+            },
         },
-        "icon": {
-            "type": "emoji",
-            "emoji": emoji
-        } if emoji else None
+        "icon": {"type": "emoji", "emoji": emoji} if emoji else None,
     }
 
     create_page(new_appointment_data)
