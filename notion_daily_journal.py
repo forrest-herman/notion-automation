@@ -99,9 +99,16 @@ def get_journal_template_id():
     templates = templates_respone.get("templates")
     # find the template that matches
     template_id = next(
-        (template["id"] for template in templates if template["name"] == template_name),
+        (
+            template["id"]
+            for template in templates
+            if template["name"].strip() == template_name
+        ),
         None,
     )
+
+    if template_id is None:
+        raise RuntimeError(f"No Journal template found by name: {template_name}")
 
     return template_id
 
