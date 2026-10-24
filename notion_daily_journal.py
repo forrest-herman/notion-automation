@@ -124,7 +124,7 @@ def generate_journal_entry():
     ]
     tags_property = read_page_properties(template_id, tag_property_id, headers)
 
-    template_tags = tags_property.get("multi_select")  # simpler
+    template_tags = tags_property.get("multi_select", [])  # simpler
 
     ##########################################
     # add more tags to the properties of a page
