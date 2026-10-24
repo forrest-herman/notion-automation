@@ -99,9 +99,16 @@ def get_journal_template_id():
     templates = templates_respone.get("templates")
     # find the template that matches
     template_id = next(
-        (template["id"] for template in templates if template["name"] == template_name),
+        (
+            template["id"]
+            for template in templates
+            if template["name"].strip() == template_name
+        ),
         None,
     )
+
+    if template_id is None:
+        raise RuntimeError(f"No Journal template found by name: {template_name}")
 
     return template_id
 
@@ -124,7 +131,7 @@ def generate_journal_entry():
     ]
     tags_property = read_page_properties(template_id, tag_property_id, headers)
 
-    template_tags = tags_property.get("multi_select")  # simpler
+    template_tags = tags_property.get("multi_select", [])  # simpler
 
     ##########################################
     # add more tags to the properties of a page
