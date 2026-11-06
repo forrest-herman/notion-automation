@@ -110,3 +110,12 @@ authentication step.
   - [x] Create daily-automations Firebase account
   - [x] Add write and read scripts for ease of use
   - [x] Integrate into existing scripts
+
+
+## Development
+
+### Getting Started
+
+1. `python -m venv env`
+2. `. env/scripts/activate`: windows or `. env/bin/activate`: unix
+3. `pip install -r requirements.txt`
